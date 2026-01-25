@@ -2,20 +2,19 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  Hexagon,
-  User,
   TrendingUp,
-  TrendingDown,
   Scale,
   Activity,
   Dumbbell,
   Calendar,
   ChevronRight,
+  Camera,
+  Trophy,
 } from 'lucide-react-native';
-import { GlassCard, Button, Label, StatusPill } from '@/components/ui';
-import { colors, spacing, typography, gradients, layout, borderRadius } from '@/constants/theme';
+import { GlassCard, StatusPill, ProgressRing, StatCard } from '@/components/ui';
+import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
 
-// Placeholder stats
+// Mock stats
 const stats = {
   currentWeight: 82.5,
   weightChange: -1.2,
@@ -23,10 +22,10 @@ const stats = {
   bodyFatChange: -0.8,
   totalVolume: 24680,
   volumeChange: 12,
-  streak: 14,
+  weeklyWorkouts: 3,
+  weeklyGoal: 4,
 };
 
-// Weekly progress data
 const weeklyProgress = [
   { day: 'L', completed: true, volume: 4200 },
   { day: 'M', completed: true, volume: 3800 },
@@ -37,141 +36,156 @@ const weeklyProgress = [
   { day: 'D', completed: false, volume: 0 },
 ];
 
-/**
- * ProgressScreen - TACTICAL MAP
- *
- * Basado en: mobile_genesis_hybrid_v2_flow.html
- * Dashboard de progreso con métricas y visualizaciones
- */
+const recentActivity = [
+  { id: '1', title: 'Peso registrado: 82.5 kg', time: 'Hoy, 8:30 AM', type: 'weight' },
+  { id: '2', title: 'Upper Body completado', time: 'Ayer, 7:15 PM', type: 'workout' },
+  { id: '3', title: 'PR en Bench Press: 85 kg', time: 'Hace 2 días', type: 'pr' },
+];
+
 export default function ProgressScreen() {
   const maxVolume = Math.max(...weeklyProgress.map(d => d.volume), 1);
+  const weekProgress = (stats.weeklyWorkouts / stats.weeklyGoal) * 100;
 
   return (
     <View style={styles.container}>
-      {/* Background gradient */}
+      {/* Premium gradient background */}
       <LinearGradient
-        colors={gradients.background}
+        colors={['#0A0A0F', '#0D0B14', '#050505']}
+        locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFill}
       />
+
+      {/* Glow */}
+      <View style={styles.glowContainer}>
+        <LinearGradient
+          colors={['rgba(0, 245, 170, 0.06)', 'transparent']}
+          style={styles.glow}
+        />
+      </View>
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Hexagon size={16} color={colors.ngx} />
-              <Text style={styles.headerLogo}>NGX.GENESIS</Text>
-            </View>
-            <View style={styles.headerRight}>
-              <View style={styles.avatarContainer}>
-                <User size={16} color={colors.chrome} />
-              </View>
-            </View>
+          <View>
+            <Text style={styles.headerLabel}>TACTICAL MAP</Text>
+            <Text style={styles.headerTitle}>Tu Progreso</Text>
+          </View>
+          <View style={styles.seasonBadge}>
+            <Text style={styles.seasonText}>S2 • W3</Text>
           </View>
         </View>
 
-        {/* Content */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Title */}
-          <View style={styles.titleSection}>
-            <Label>Tactical Map</Label>
-            <Text style={styles.title}>TU PROGRESO</Text>
-            <Text style={styles.subtitle}>Season 2 // Semana 3</Text>
-          </View>
-
-          {/* Streak Card */}
-          <GlassCard style={styles.streakCard}>
-            <View style={styles.streakRow}>
-              <View style={styles.streakInfo}>
-                <View style={styles.streakIcon}>
-                  <Activity size={20} color={colors.mint} />
-                </View>
-                <View>
-                  <Label color="mint">Racha Actual</Label>
-                  <Text style={styles.streakValue}>{stats.streak} días</Text>
-                </View>
+          {/* Week Summary Card */}
+          <GlassCard variant="mint" style={styles.weekCard}>
+            <View style={styles.weekContent}>
+              <View style={styles.weekInfo}>
+                <Text style={styles.weekLabel}>ESTA SEMANA</Text>
+                <Text style={styles.weekTitle}>
+                  {stats.weeklyWorkouts} de {stats.weeklyGoal} sesiones
+                </Text>
+                <Text style={styles.weekSubtitle}>
+                  {stats.weeklyGoal - stats.weeklyWorkouts} restantes para tu meta
+                </Text>
               </View>
-              <StatusPill>En fuego</StatusPill>
+              <ProgressRing
+                progress={weekProgress}
+                size={80}
+                strokeWidth={6}
+                color="mint"
+                value={`${stats.weeklyWorkouts}`}
+                sublabel={`/${stats.weeklyGoal}`}
+              />
+            </View>
+
+            {/* Week Days */}
+            <View style={styles.weekDays}>
+              {weeklyProgress.map((day, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.dayDot,
+                    day.completed && styles.dayDotComplete,
+                  ]}
+                >
+                  <Text style={[
+                    styles.dayText,
+                    day.completed && styles.dayTextComplete,
+                  ]}>
+                    {day.day}
+                  </Text>
+                </View>
+              ))}
             </View>
           </GlassCard>
 
-          {/* Main Stats Grid */}
+          {/* Stats Grid */}
+          <Text style={styles.sectionTitle}>Métricas clave</Text>
           <View style={styles.statsGrid}>
-            <GlassCard style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <Scale size={14} color={colors.ngx} />
-              </View>
-              <Label>Peso</Label>
-              <Text style={styles.statValue}>{stats.currentWeight}</Text>
-              <Label color="chrome">kg</Label>
-              <View style={styles.statTrend}>
-                <TrendingDown size={12} color={colors.mint} />
-                <Text style={styles.statTrendText}>{Math.abs(stats.weightChange)} kg</Text>
-              </View>
-            </GlassCard>
-
-            <GlassCard style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <Activity size={14} color={colors.ngx} />
-              </View>
-              <Label>Body Fat</Label>
-              <Text style={styles.statValue}>{stats.bodyFat}</Text>
-              <Label color="chrome">%</Label>
-              <View style={styles.statTrend}>
-                <TrendingDown size={12} color={colors.mint} />
-                <Text style={styles.statTrendText}>{Math.abs(stats.bodyFatChange)}%</Text>
-              </View>
-            </GlassCard>
-
-            <GlassCard style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <Dumbbell size={14} color={colors.ngx} />
-              </View>
-              <Label>Volumen</Label>
-              <Text style={styles.statValue}>{(stats.totalVolume / 1000).toFixed(1)}k</Text>
-              <Label color="chrome">kg total</Label>
-              <View style={styles.statTrend}>
-                <TrendingUp size={12} color={colors.mint} />
-                <Text style={styles.statTrendText}>+{stats.volumeChange}%</Text>
-              </View>
-            </GlassCard>
-
-            <GlassCard style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <Calendar size={14} color={colors.ngx} />
-              </View>
-              <Label>Sesiones</Label>
-              <Text style={styles.statValue}>3/5</Text>
-              <Label color="chrome">esta semana</Label>
-              <View style={styles.statTrend}>
-                <Text style={styles.statTrendNeutral}>En curso</Text>
-              </View>
-            </GlassCard>
+            <StatCard
+              icon={Scale}
+              label="Peso"
+              value={`${stats.currentWeight}`}
+              sublabel="kg"
+              progress={100}
+              color="primary"
+              style={styles.statCard}
+            />
+            <StatCard
+              icon={Activity}
+              label="Body Fat"
+              value={`${stats.bodyFat}%`}
+              sublabel={`${stats.bodyFatChange > 0 ? '+' : ''}${stats.bodyFatChange}%`}
+              progress={75}
+              color="mint"
+              style={styles.statCard}
+            />
+            <StatCard
+              icon={Dumbbell}
+              label="Volumen"
+              value={`${(stats.totalVolume / 1000).toFixed(1)}k`}
+              sublabel="kg total"
+              progress={85}
+              color="warning"
+              style={styles.statCard}
+            />
+            <StatCard
+              icon={Trophy}
+              label="PRs"
+              value="3"
+              sublabel="este mes"
+              progress={60}
+              color="chrome"
+              style={styles.statCard}
+            />
           </View>
 
-          {/* Weekly Chart */}
+          {/* Volume Chart */}
           <GlassCard style={styles.chartCard}>
             <View style={styles.chartHeader}>
-              <Label>Volumen Semanal</Label>
-              <Pressable style={styles.chartAction}>
-                <Label color="chrome">Ver más</Label>
-                <ChevronRight size={14} color={colors.chromeDark} />
-              </Pressable>
+              <Text style={styles.chartTitle}>Volumen Semanal</Text>
+              <View style={styles.chartTrend}>
+                <TrendingUp size={14} color={colors.mint} />
+                <Text style={styles.chartTrendText}>+{stats.volumeChange}%</Text>
+              </View>
             </View>
 
             <View style={styles.chartContainer}>
               {weeklyProgress.map((day, index) => (
                 <View key={index} style={styles.chartBar}>
-                  <View style={styles.barContainer}>
+                  <View style={styles.barWrapper}>
                     <LinearGradient
-                      colors={day.completed ? gradients.progress : ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.1)']}
+                      colors={day.completed
+                        ? [colors.ngx, colors.primaryLight]
+                        : ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']
+                      }
                       style={[
                         styles.barFill,
-                        { height: `${(day.volume / maxVolume) * 100}%` },
+                        { height: `${Math.max((day.volume / maxVolume) * 100, 5)}%` },
                       ]}
                     />
                   </View>
@@ -187,48 +201,56 @@ export default function ProgressScreen() {
           </GlassCard>
 
           {/* Quick Actions */}
-          <View style={styles.actionsSection}>
-            <Label>Registrar</Label>
-            <View style={styles.actionsRow}>
-              <Button variant="chip" onPress={() => {}} style={styles.actionChip}>
-                + Peso
-              </Button>
-              <Button variant="chip" onPress={() => {}} style={styles.actionChip}>
-                + Medidas
-              </Button>
-              <Button variant="chip" onPress={() => {}} style={styles.actionChip}>
-                + Foto
-              </Button>
-            </View>
+          <Text style={styles.sectionTitle}>Registrar</Text>
+          <View style={styles.actionsRow}>
+            <Pressable style={styles.actionCard}>
+              <View style={styles.actionIcon}>
+                <Scale size={20} color={colors.ngx} />
+              </View>
+              <Text style={styles.actionLabel}>Peso</Text>
+            </Pressable>
+            <Pressable style={styles.actionCard}>
+              <View style={styles.actionIcon}>
+                <Activity size={20} color={colors.ngx} />
+              </View>
+              <Text style={styles.actionLabel}>Medidas</Text>
+            </Pressable>
+            <Pressable style={styles.actionCard}>
+              <View style={styles.actionIcon}>
+                <Camera size={20} color={colors.ngx} />
+              </View>
+              <Text style={styles.actionLabel}>Foto</Text>
+            </Pressable>
           </View>
 
-          {/* Progress History */}
-          <GlassCard style={styles.historyCard}>
-            <View style={styles.historyHeader}>
-              <Label>Historial Reciente</Label>
-              <ChevronRight size={16} color={colors.chromeDark} />
-            </View>
-            <View style={styles.historyItem}>
-              <View style={styles.historyDot} />
-              <View style={styles.historyContent}>
-                <Text style={styles.historyTitle}>Peso registrado: 82.5 kg</Text>
-                <Label color="chrome">Hoy, 8:30 AM</Label>
+          {/* Recent Activity */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Actividad reciente</Text>
+            <Pressable style={styles.viewAllButton}>
+              <Text style={styles.viewAllText}>Ver todo</Text>
+              <ChevronRight size={14} color={colors.textMuted} />
+            </Pressable>
+          </View>
+
+          <GlassCard style={styles.activityCard} padding="none">
+            {recentActivity.map((item, index) => (
+              <View key={item.id}>
+                <View style={styles.activityItem}>
+                  <View style={[
+                    styles.activityDot,
+                    item.type === 'pr' && styles.activityDotPr,
+                  ]} />
+                  <View style={styles.activityContent}>
+                    <Text style={styles.activityTitle}>{item.title}</Text>
+                    <Text style={styles.activityTime}>{item.time}</Text>
+                  </View>
+                  <ChevronRight size={16} color={colors.textMuted} />
+                </View>
+                {index < recentActivity.length - 1 && (
+                  <View style={styles.activityDivider} />
+                )}
               </View>
-            </View>
-            <View style={styles.historyItem}>
-              <View style={styles.historyDot} />
-              <View style={styles.historyContent}>
-                <Text style={styles.historyTitle}>Sesión completada: Upper Body</Text>
-                <Label color="chrome">Ayer, 7:15 PM</Label>
-              </View>
-            </View>
-            <View style={styles.historyItem}>
-              <View style={styles.historyDot} />
-              <View style={styles.historyContent}>
-                <Text style={styles.historyTitle}>PR en Bench Press: 85 kg</Text>
-                <Label color="chrome">Hace 2 días</Label>
-              </View>
-            </View>
+            ))}
           </GlassCard>
         </ScrollView>
       </SafeAreaView>
@@ -241,219 +263,274 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.void,
   },
+  glowContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 400,
+  },
+  glow: {
+    flex: 1,
+    borderBottomLeftRadius: 200,
+    borderBottomRightRadius: 200,
+  },
   safeArea: {
     flex: 1,
   },
+
+  // Header
   header: {
-    height: layout.headerHeight,
-    justifyContent: 'flex-end',
-    paddingHorizontal: layout.contentPadding,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: layout.contentPadding,
+    paddingVertical: spacing.md,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  headerLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    letterSpacing: 2,
+    marginBottom: 4,
   },
-  headerLogo: {
-    fontSize: typography.fontSize.label,
+  headerTitle: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+  },
+  seasonBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: 'rgba(109, 0, 255, 0.15)',
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(109, 0, 255, 0.25)',
+  },
+  seasonText: {
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
     color: colors.ngx,
-    letterSpacing: typography.letterSpacing.wider,
+    letterSpacing: 1,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatarContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+
+  // Content
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: layout.contentPadding,
     paddingBottom: layout.contentPaddingBottom,
+    gap: spacing.lg,
   },
-  titleSection: {
-    marginBottom: spacing.xl,
+
+  // Week Card
+  weekCard: {
+    borderColor: 'rgba(0, 245, 170, 0.25)',
   },
-  title: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    textTransform: 'uppercase',
-    marginTop: 4,
-  },
-  subtitle: {
-    fontSize: typography.fontSize.label,
-    color: colors.chromeDark,
-    marginTop: 4,
-  },
-  streakCard: {
-    marginBottom: spacing.lg,
-    borderColor: 'rgba(0, 245, 170, 0.3)',
-    borderWidth: 1,
-  },
-  streakRow: {
+  weekContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: spacing.lg,
   },
-  streakInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  weekInfo: {
+    flex: 1,
   },
-  streakIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 245, 170, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  weekLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.mint,
+    letterSpacing: 2,
+    marginBottom: 4,
   },
-  streakValue: {
+  weekTitle: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
+  },
+  weekSubtitle: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
     marginTop: 2,
   },
-  statsGrid: {
+  weekDays: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: spacing.lg,
+    justifyContent: 'space-between',
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 245, 170, 0.15)',
   },
-  statCard: {
-    width: '48%',
-    flexGrow: 1,
+  dayDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
-    paddingVertical: 16,
+    justifyContent: 'center',
   },
-  statIcon: {
-    marginBottom: 4,
+  dayDotComplete: {
+    backgroundColor: colors.mint,
   },
-  statValue: {
-    fontSize: typography.fontSize['2xl'],
+  dayText: {
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    marginVertical: 4,
+    color: colors.textMuted,
   },
-  statTrend: {
+  dayTextComplete: {
+    color: colors.void,
+  },
+
+  // Section
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: -spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: -spacing.sm,
+  },
+  viewAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 4,
   },
-  statTrendText: {
-    fontSize: typography.fontSize.label,
-    color: colors.mint,
-    fontWeight: typography.fontWeight.medium,
+  viewAllText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
   },
-  statTrendNeutral: {
-    fontSize: typography.fontSize.label,
-    color: colors.chromeDark,
+
+  // Stats
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
-  chartCard: {
-    marginBottom: spacing.lg,
+  statCard: {
+    flex: 1,
+    minWidth: '47%',
   },
+
+  // Chart
+  chartCard: {},
   chartHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
-  chartAction: {
+  chartTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+  },
+  chartTrend: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  chartTrendText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.mint,
   },
   chartContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 120,
+    height: 100,
   },
   chartBar: {
     flex: 1,
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.xs,
   },
-  barContainer: {
-    width: 24,
+  barWrapper: {
+    width: 28,
     height: 80,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 6,
     justifyContent: 'flex-end',
     overflow: 'hidden',
   },
   barFill: {
     width: '100%',
-    borderRadius: 4,
+    borderRadius: 6,
   },
   barLabel: {
-    fontSize: typography.fontSize.label,
-    color: colors.chromeDark,
-    textTransform: 'uppercase',
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textMuted,
   },
   barLabelActive: {
     color: colors.ngx,
   },
-  actionsSection: {
-    marginBottom: spacing.lg,
-  },
+
+  // Actions
   actionsRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
+    gap: spacing.sm,
   },
-  actionChip: {
+  actionCard: {
     flex: 1,
-  },
-  historyCard: {
-    marginBottom: spacing.lg,
-  },
-  historyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    padding: spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    gap: spacing.xs,
   },
-  historyItem: {
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(109, 0, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+  },
+
+  // Activity
+  activityCard: {},
+  activityItem: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 12,
+    alignItems: 'center',
+    padding: spacing.md,
+    gap: spacing.md,
   },
-  historyDot: {
+  activityDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: colors.ngx,
-    marginTop: 4,
   },
-  historyContent: {
+  activityDotPr: {
+    backgroundColor: colors.mint,
+  },
+  activityContent: {
     flex: 1,
   },
-  historyTitle: {
+  activityTitle: {
     fontSize: typography.fontSize.base,
     color: colors.text,
-    marginBottom: 2,
+  },
+  activityTime: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  activityDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    marginHorizontal: spacing.md,
   },
 });

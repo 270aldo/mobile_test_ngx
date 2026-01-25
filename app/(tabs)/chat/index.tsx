@@ -12,14 +12,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  Hexagon,
-  User,
   Sparkles,
   Send,
   Mic,
+  Dumbbell,
+  Apple,
+  Heart,
+  ChevronRight,
 } from 'lucide-react-native';
 import { GlassCard, Label, PulseDot } from '@/components/ui';
-import { colors, spacing, typography, gradients, layout, borderRadius } from '@/constants/theme';
+import { colors, spacing, typography, layout, borderRadius, touchTarget, avatarSizes } from '@/constants/theme';
 
 interface ChatMessage {
   id: string;
@@ -28,34 +30,34 @@ interface ChatMessage {
   timestamp: string;
 }
 
-// Placeholder messages
+// Mock messages
 const initialMessages: ChatMessage[] = [
   {
     id: '1',
     role: 'genesis',
-    content: 'Hola! Soy GENESIS, tu asistente de entrenamiento. Puedo ayudarte con tu programa, nutrición, recovery y cualquier duda que tengas sobre tu progreso.',
+    content: 'Hola! Soy GENESIS, tu sistema de entrenamiento inteligente. Puedo ayudarte con tu programa, nutrición, recovery y cualquier duda sobre tu progreso. ¿En qué puedo ayudarte hoy?',
     timestamp: '10:30',
   },
   {
     id: '2',
     role: 'user',
-    content: 'Hola! Quiero saber si debo cambiar el peso en bench press',
+    content: 'Quiero saber si debo subir el peso en bench press',
     timestamp: '10:32',
   },
   {
     id: '3',
     role: 'genesis',
-    content: 'Según tus últimas sesiones, has completado 4x10 con 80kg consistentemente. Te sugiero subir a 82.5kg para el próximo mesociclo. ¿Quieres que actualice tu programa?',
+    content: 'Analizando tus últimas 4 sesiones de Upper Body Push...\n\nHas completado 4x10 con 80kg consistentemente con RPE 7-8. Según tu progresión lineal, estás listo para subir.\n\n**Recomendación:** Incrementa a 82.5kg para la siguiente sesión. Mantén el mismo esquema de sets y reps.\n\n¿Quieres que actualice tu programa?',
     timestamp: '10:32',
   },
 ];
 
-/**
- * ChatScreen - GENESIS Interface
- *
- * Basado en: mobile_genesis_hybrid_v2_flow.html
- * Chat con IA para coaching, nutrición y recovery
- */
+const quickActions = [
+  { id: 'workout', icon: Dumbbell, label: 'Mi workout', prompt: 'Cuéntame sobre mi workout de hoy' },
+  { id: 'nutrition', icon: Apple, label: 'Nutrición', prompt: '¿Qué debería comer hoy?' },
+  { id: 'recovery', icon: Heart, label: 'Recovery', prompt: 'Dame tips de recovery para hoy' },
+];
+
 export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [inputText, setInputText] = useState('');
@@ -86,52 +88,48 @@ export default function ChatScreen() {
     }, 1000);
   };
 
+  const handleQuickAction = (prompt: string) => {
+    setInputText(prompt);
+  };
+
   return (
     <View style={styles.container}>
-      {/* Background gradient */}
+      {/* Premium gradient background */}
       <LinearGradient
-        colors={gradients.background}
+        colors={['#0A0A0F', '#0D0B14', '#050505']}
+        locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Hexagon size={16} color={colors.ngx} />
-              <Text style={styles.headerLogo}>NGX.GENESIS</Text>
+          <View style={styles.genesisInfo}>
+            <View style={styles.genesisIcon}>
+              <Sparkles size={24} color={colors.ngx} />
             </View>
-            <View style={styles.headerRight}>
-              <View style={styles.avatarContainer}>
-                <User size={16} color={colors.chrome} />
+            <View>
+              <Text style={styles.genesisTitle}>GENESIS</Text>
+              <View style={styles.statusRow}>
+                <PulseDot color="mint" size={6} />
+                <Text style={styles.statusText}>Activo</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Title Section */}
-        <View style={styles.titleSection}>
-          <View style={styles.genesisIcon}>
-            <Sparkles size={24} color={colors.ngx} />
-          </View>
-          <View>
-            <Label>Genesis Interface</Label>
-            <Text style={styles.title}>PREGUNTA CUALQUIER COSA</Text>
-          </View>
-        </View>
-
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <Pressable style={styles.quickChip}>
-            <Label color="chrome">Modificar workout</Label>
-          </Pressable>
-          <Pressable style={styles.quickChip}>
-            <Label color="chrome">Nutrición hoy</Label>
-          </Pressable>
-          <Pressable style={styles.quickChip}>
-            <Label color="chrome">Recovery tips</Label>
-          </Pressable>
+          {quickActions.map((action) => (
+            <Pressable
+              key={action.id}
+              style={styles.quickAction}
+              onPress={() => handleQuickAction(action.prompt)}
+            >
+              <action.icon size={16} color={colors.ngx} />
+              <Text style={styles.quickActionText}>{action.label}</Text>
+            </Pressable>
+          ))}
         </View>
 
         <KeyboardAvoidingView
@@ -161,21 +159,19 @@ export default function ChatScreen() {
                   </View>
                 )}
 
-                <GlassCard
+                <View
                   style={[
                     styles.messageBubble,
                     message.role === 'user' && styles.messageBubbleUser,
                   ]}
                 >
                   <Text style={styles.messageText}>{message.content}</Text>
-                  <Label color="chrome" style={styles.messageTime}>
-                    {message.timestamp}
-                  </Label>
-                </GlassCard>
+                  <Text style={styles.messageTime}>{message.timestamp}</Text>
+                </View>
 
                 {message.role === 'user' && (
                   <View style={styles.userAvatar}>
-                    <User size={14} color={colors.text} />
+                    <Text style={styles.userAvatarText}>T</Text>
                   </View>
                 )}
               </View>
@@ -184,42 +180,39 @@ export default function ChatScreen() {
 
           {/* Input Area */}
           <View style={styles.inputContainer}>
-            <GlassCard style={styles.inputCard}>
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Escribe tu mensaje..."
-                  placeholderTextColor={colors.chromeDark}
-                  value={inputText}
-                  onChangeText={setInputText}
-                  multiline
-                  maxLength={500}
-                  testID="chat-input"
-                />
-                <View style={styles.inputActions}>
-                  <Pressable style={styles.micButton}>
-                    <Mic size={18} color={colors.chrome} />
-                  </Pressable>
-                  <Pressable
-                    style={[
-                      styles.sendButton,
-                      !inputText.trim() && styles.sendButtonDisabled,
-                    ]}
-                    onPress={handleSend}
-                    disabled={!inputText.trim()}
-                    testID="chat-send-button"
-                  >
-                    <Send size={18} color={inputText.trim() ? colors.text : colors.chromeDark} />
-                  </Pressable>
-                </View>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="Pregunta a GENESIS..."
+                placeholderTextColor={colors.textMuted}
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                maxLength={500}
+                testID="chat-input"
+              />
+              <View style={styles.inputActions}>
+                <Pressable style={styles.micButton}>
+                  <Mic size={20} color={colors.textMuted} />
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.sendButton,
+                    inputText.trim() && styles.sendButtonActive,
+                  ]}
+                  onPress={handleSend}
+                  disabled={!inputText.trim()}
+                  testID="chat-send-button"
+                >
+                  <Send size={18} color={inputText.trim() ? colors.void : colors.textMuted} />
+                </Pressable>
               </View>
-            </GlassCard>
-
-            {/* Typing indicator */}
-            <View style={styles.typingRow}>
-              <PulseDot color="ngx" size={6} />
-              <Label color="chrome">GENESIS puede cometer errores</Label>
             </View>
+
+            {/* Disclaimer */}
+            <Text style={styles.disclaimer}>
+              GENESIS puede cometer errores. Verifica información importante.
+            </Text>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -235,82 +228,76 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+
+  // Header
   header: {
-    height: layout.headerHeight,
-    justifyContent: 'flex-end',
-    paddingHorizontal: layout.contentPadding,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerLogo: {
-    fontSize: typography.fontSize.label,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.ngx,
-    letterSpacing: typography.letterSpacing.wider,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatarContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  titleSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
     paddingHorizontal: layout.contentPadding,
     paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  genesisInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   genesisIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(109, 0, 255, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(109, 0, 255, 0.4)',
+    borderColor: 'rgba(109, 0, 255, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
+  genesisTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    marginTop: 4,
+    color: colors.ngx,
+    letterSpacing: 3,
   },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  statusText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.mint,
+  },
+
+  // Quick Actions
   quickActions: {
     flexDirection: 'row',
     paddingHorizontal: layout.contentPadding,
-    gap: 8,
-    marginBottom: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
-  quickChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  quickAction: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(109, 0, 255, 0.08)',
     borderWidth: 1,
-    borderColor: colors.chipBorder,
-    borderRadius: borderRadius.full,
+    borderColor: 'rgba(109, 0, 255, 0.2)',
+    borderRadius: borderRadius.lg,
+    minHeight: touchTarget.min,
   },
+  quickActionText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+  },
+
+  // Messages
   keyboardView: {
     flex: 1,
   },
@@ -325,37 +312,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     marginBottom: spacing.md,
-    gap: 8,
+    gap: spacing.sm,
   },
   messageRowUser: {
     flexDirection: 'row-reverse',
   },
   genesisAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(109, 0, 255, 0.15)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(109, 0, 255, 0.2)',
     borderWidth: 1,
-    borderColor: 'rgba(109, 0, 255, 0.4)',
+    borderColor: 'rgba(109, 0, 255, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   userAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: colors.ngx,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  userAvatarText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+  },
   messageBubble: {
     maxWidth: '75%',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   messageBubbleUser: {
     backgroundColor: 'rgba(109, 0, 255, 0.2)',
-    borderColor: 'rgba(109, 0, 255, 0.4)',
+    borderColor: 'rgba(109, 0, 255, 0.3)',
   },
   messageText: {
     fontSize: typography.fontSize.base,
@@ -363,56 +359,62 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   messageTime: {
-    marginTop: 6,
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
     textAlign: 'right',
   },
+
+  // Input
   inputContainer: {
     paddingHorizontal: layout.contentPadding,
-    paddingBottom: layout.contentPaddingBottom,
+    paddingBottom: spacing.lg,
   },
-  inputCard: {
-    borderRadius: borderRadius.xl,
-  },
-  inputRow: {
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
   },
   input: {
     flex: 1,
     fontSize: typography.fontSize.base,
     color: colors.text,
     maxHeight: 100,
-    paddingVertical: 4,
+    paddingVertical: spacing.xs,
   },
   inputActions: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   micButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    width: touchTarget.min,
+    height: touchTarget.min,
+    borderRadius: touchTarget.min / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: touchTarget.min,
+    height: touchTarget.min,
+    borderRadius: touchTarget.min / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButtonActive: {
     backgroundColor: colors.ngx,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  sendButtonDisabled: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  typingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 12,
+  disclaimer: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
 });

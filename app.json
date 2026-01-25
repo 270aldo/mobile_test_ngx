@@ -25,10 +25,6 @@
       "edgeToEdgeEnabled": true,
       "package": "com.ngxgenesis.app"
     },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
     "plugins": [
       "expo-router",
       "expo-secure-store",

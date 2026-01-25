@@ -36,7 +36,13 @@ export default function RootLayout() {
 }
 
 function RootNavigator() {
-  // TODO: Re-enable auth when done with design
+  // ┌─────────────────────────────────────────────────────────────┐
+  // │  DEV MODE: Auth bypass enabled for UI development          │
+  // │  To enable real auth, uncomment the block below and        │
+  // │  comment out the DEV MODE block                            │
+  // └─────────────────────────────────────────────────────────────┘
+
+  // PRODUCTION AUTH (uncomment when ready):
   // const isLoggedIn = useIsAuthenticated();
   // const user = useAuthStore((s) => s.user);
   // const needsOnboarding = !!user && !user.user_metadata?.onboarding_completed;
@@ -50,6 +56,7 @@ function RootNavigator() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
+        animation: 'fade',
       }}
     >
       {/* Protected: Only for authenticated users */}

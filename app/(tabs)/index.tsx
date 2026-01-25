@@ -1,45 +1,76 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import {
   Hexagon,
-  User,
+  Bell,
+  Play,
+  Calendar,
   Flame,
   Moon,
   Droplet,
   Footprints,
+  ChevronRight,
   Sparkles,
-  UserCircle,
+  MessageCircle,
 } from 'lucide-react-native';
-import { GlassCard, Button, Label, StatusPill, PulseDot } from '@/components/ui';
+import {
+  GlassCard,
+  Button,
+  Label,
+  StatusPill,
+  PulseDot,
+  ProgressRing,
+  StatCard,
+} from '@/components/ui';
 import { useUser } from '@/stores/auth';
-import { colors, spacing, typography, gradients, layout } from '@/constants/theme';
+import { colors, spacing, typography, layout, touchTarget } from '@/constants/theme';
 
 export default function HomeScreen() {
   const user = useUser();
+  const router = useRouter();
+
+  // Calculate time-based greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
+
+  // Mock data - will come from stores
+  const weekProgress = 43; // 3/7 days = 43%
+  const completedDays = 3;
+  const totalDays = 7;
 
   return (
     <View style={styles.container}>
-      {/* Background gradient */}
+      {/* Premium gradient background */}
       <LinearGradient
-        colors={gradients.background}
+        colors={['#0A0A0F', '#0D0B14', '#050505']}
+        locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFill}
       />
+
+      {/* Subtle radial glow */}
+      <View style={styles.glowContainer}>
+        <LinearGradient
+          colors={['rgba(109, 0, 255, 0.08)', 'transparent']}
+          style={styles.glow}
+        />
+      </View>
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Hexagon size={16} color={colors.ngx} />
-              <Text style={styles.headerLogo}>NGX.GENESIS</Text>
-            </View>
-            <View style={styles.headerRight}>
-              <View style={styles.avatarContainer}>
-                <User size={16} color={colors.chrome} />
-              </View>
+          <View style={styles.headerLeft}>
+            <Hexagon size={20} color={colors.ngx} fill={colors.ngx} fillOpacity={0.2} />
+            <View>
+              <Text style={styles.greeting}>{greeting}</Text>
+              <Text style={styles.userName}>{user?.email?.split('@')[0] || 'Atleta'}</Text>
             </View>
           </View>
+          <Pressable style={styles.notificationButton}>
+            <Bell size={20} color={colors.chrome} />
+            <View style={styles.notificationBadge} />
+          </Pressable>
         </View>
 
         {/* Content */}
@@ -48,147 +79,156 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Season/Week Label */}
-          <View style={styles.seasonLabel}>
-            <Label>Season 2 // Week 3</Label>
+          {/* Season Badge */}
+          <View style={styles.seasonBadge}>
+            <View style={styles.seasonDot} />
+            <Text style={styles.seasonText}>SEASON 2 • WEEK 3 • FOUNDATION</Text>
           </View>
 
-          {/* Title */}
-          <Text style={styles.title}>Command Center</Text>
-          <Text style={styles.subtitle}>Performance & Longevity. Sin plantillas.</Text>
-          <Text style={styles.todayLabel}>Hoy: Upper Body // Push</Text>
+          {/* Hero Mission Card */}
+          <GlassCard variant="hero" style={styles.heroCard}>
+            <View style={styles.heroContent}>
+              {/* Left: Info */}
+              <View style={styles.heroInfo}>
+                <Label color="ngx">Misión del día</Label>
+                <Text style={styles.heroTitle}>Upper Body</Text>
+                <Text style={styles.heroSubtitle}>Push // Fuerza</Text>
 
-          {/* Mission Card */}
-          <GlassCard style={styles.missionCard}>
-            <View style={styles.missionHeader}>
-              <View>
-                <Label>Mision del dia</Label>
-                <Text style={styles.missionTitle}>Upper Body // Push</Text>
-                <Label color="chrome">45 min // 5 ejercicios // Fuerza</Label>
+                <View style={styles.heroMeta}>
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaValue}>45</Text>
+                    <Text style={styles.metaLabel}>min</Text>
+                  </View>
+                  <View style={styles.metaDivider} />
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaValue}>5</Text>
+                    <Text style={styles.metaLabel}>ejercicios</Text>
+                  </View>
+                  <View style={styles.metaDivider} />
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaValue}>RPE</Text>
+                    <Text style={styles.metaLabel}>7-8</Text>
+                  </View>
+                </View>
               </View>
-              <View style={styles.missionStatus}>
-                <StatusPill>Pendiente</StatusPill>
-                <Button variant="chip" onPress={() => {}}>
-                  Calendario
-                </Button>
+
+              {/* Right: Progress Ring */}
+              <View style={styles.heroProgress}>
+                <ProgressRing
+                  progress={weekProgress}
+                  size={90}
+                  strokeWidth={6}
+                  value={`${completedDays}/${totalDays}`}
+                  sublabel="semana"
+                />
               </View>
             </View>
 
-            <View style={styles.chipRow}>
-              <Button variant="chip" onPress={() => {}}>
-                Equipo: Gym
-              </Button>
-              <Button variant="chip" onPress={() => {}}>
-                Intensidad: Media
-              </Button>
-            </View>
-
+            {/* CTA Button */}
             <Button
               variant="primary"
-              onPress={() => {}}
+              onPress={() => router.push('/(tabs)/train')}
               fullWidth
               testID="start-workout-button"
+              style={styles.heroCta}
             >
-              Iniciar sesion
+              <Play size={18} color={colors.text} style={{ marginRight: 8 }} />
+              Iniciar sesión
             </Button>
 
-            {/* Progress dots */}
-            <View style={styles.progressRow}>
-              <View style={styles.progressDots}>
-                {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.progressDot,
-                      i <= 2 && styles.progressDotActive,
-                      i === 3 && styles.progressDotCurrent,
-                    ]}
-                  />
-                ))}
-              </View>
-              <Label color="chrome">3/7 completados</Label>
-            </View>
-
-            <Button
-              variant="secondary"
-              onPress={() => {}}
-              fullWidth
-              style={styles.rescheduleButton}
-            >
-              Reprogramar sesion
-            </Button>
-          </GlassCard>
-
-          {/* Coach Card */}
-          <GlassCard style={styles.coachCard}>
-            <View style={styles.coachRow}>
-              <View style={styles.coachAvatar}>
-                <UserCircle size={20} color={colors.mint} />
-              </View>
-              <View style={styles.coachContent}>
-                <Label>Coach Hybrid</Label>
-                <Text style={styles.coachMessage}>
-                  "Gran progreso esta semana. Recuerda..."
-                </Text>
-                <Label color="chrome">Tap para abrir</Label>
-              </View>
-            </View>
-            <View style={styles.unreadRow}>
-              <PulseDot color="mint" />
-              <Label color="chrome">1 mensaje sin leer</Label>
+            {/* Secondary actions */}
+            <View style={styles.heroActions}>
+              <Pressable style={styles.heroAction}>
+                <Calendar size={14} color={colors.textMuted} />
+                <Text style={styles.heroActionText}>Reprogramar</Text>
+              </Pressable>
+              <View style={styles.heroActionDivider} />
+              <Pressable style={styles.heroAction}>
+                <Text style={styles.heroActionText}>Ver detalles</Text>
+                <ChevronRight size={14} color={colors.textMuted} />
+              </Pressable>
             </View>
           </GlassCard>
 
-          {/* Metrics Grid */}
-          <View style={styles.metricsGrid}>
-            <GlassCard style={styles.metricCard}>
-              <View style={styles.metricIcon}>
-                <Flame size={14} color={colors.ngx} />
-              </View>
-              <Label>kcal hoy</Label>
-              <Text style={styles.metricValue}>1680 / 2300</Text>
-              <Label color="chrome">Objetivo diario</Label>
-            </GlassCard>
-
-            <GlassCard style={styles.metricCard}>
-              <View style={styles.metricIcon}>
-                <Moon size={14} color={colors.ngx} />
-              </View>
-              <Label>Sueno</Label>
-              <Text style={styles.metricValue}>7.1h</Text>
-              <Label color="chrome">Anoche</Label>
-            </GlassCard>
-
-            <GlassCard style={styles.metricCard}>
-              <View style={styles.metricIcon}>
-                <Droplet size={14} color={colors.ngx} />
-              </View>
-              <Label>Agua</Label>
-              <Text style={styles.metricValue}>2.3L</Text>
-              <Label color="chrome">Meta 3.0L</Label>
-            </GlassCard>
-
-            <GlassCard style={styles.metricCard}>
-              <View style={styles.metricIcon}>
-                <Footprints size={14} color={colors.ngx} />
-              </View>
-              <Label>Pasos</Label>
-              <Text style={styles.metricValue}>7,820</Text>
-              <Label color="chrome">Hoy</Label>
-            </GlassCard>
+          {/* Stats Grid */}
+          <Text style={styles.sectionTitle}>Métricas del día</Text>
+          <View style={styles.statsGrid}>
+            <StatCard
+              icon={Flame}
+              label="Calorías"
+              value="1,680"
+              sublabel="/ 2,300"
+              progress={73}
+              color="warning"
+              style={styles.statCard}
+            />
+            <StatCard
+              icon={Moon}
+              label="Sueño"
+              value="7.1h"
+              sublabel="Anoche"
+              progress={89}
+              color="primary"
+              style={styles.statCard}
+            />
+            <StatCard
+              icon={Droplet}
+              label="Agua"
+              value="2.3L"
+              sublabel="/ 3.0L"
+              progress={77}
+              color="mint"
+              style={styles.statCard}
+            />
+            <StatCard
+              icon={Footprints}
+              label="Pasos"
+              value="7,820"
+              sublabel="Hoy"
+              progress={78}
+              color="chrome"
+              style={styles.statCard}
+            />
           </View>
 
-          {/* GENESIS Card */}
-          <GlassCard style={styles.genesisCard}>
-            <View style={styles.genesisRow}>
-              <View>
-                <Label>GENESIS Interface</Label>
-                <Text style={styles.genesisTitle}>Pregunta cualquier cosa</Text>
-                <Label color="chrome">Tu programa, nutricion, recovery</Label>
+          {/* Coach Card */}
+          <GlassCard variant="mint" style={styles.coachCard}>
+            <View style={styles.coachHeader}>
+              <View style={styles.coachBadge}>
+                <Text style={styles.coachBadgeText}>COACH</Text>
               </View>
-              <Sparkles size={20} color={colors.ngx} />
+              <PulseDot color="mint" size={8} />
             </View>
+
+            <Text style={styles.coachTitle}>Gran progreso esta semana</Text>
+            <Text style={styles.coachMessage}>
+              Tu consistencia está pagando dividendos. El incremento en press de banca confirma que la fase foundation funciona.
+            </Text>
+
+            <Pressable style={styles.coachCta}>
+              <MessageCircle size={14} color={colors.mint} />
+              <Text style={styles.coachCtaText}>Responder al coach</Text>
+              <ChevronRight size={14} color={colors.mint} />
+            </Pressable>
           </GlassCard>
+
+          {/* GENESIS Card */}
+          <Pressable onPress={() => router.push('/(tabs)/chat')}>
+            <GlassCard style={styles.genesisCard}>
+              <View style={styles.genesisContent}>
+                <View style={styles.genesisIcon}>
+                  <Sparkles size={24} color={colors.ngx} />
+                </View>
+                <View style={styles.genesisText}>
+                  <Text style={styles.genesisTitle}>GENESIS</Text>
+                  <Text style={styles.genesisSubtitle}>
+                    Pregunta lo que quieras sobre tu programa
+                  </Text>
+                </View>
+                <ChevronRight size={20} color={colors.textMuted} />
+              </View>
+            </GlassCard>
+          </Pressable>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -200,188 +240,278 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.void,
   },
+  glowContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 400,
+  },
+  glow: {
+    flex: 1,
+    borderBottomLeftRadius: 200,
+    borderBottomRightRadius: 200,
+  },
   safeArea: {
     flex: 1,
   },
+
+  // Header
   header: {
-    height: layout.headerHeight,
-    justifyContent: 'flex-end',
-    paddingHorizontal: layout.contentPadding,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: layout.contentPadding,
+    paddingVertical: spacing.md,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
-  headerLogo: {
-    fontSize: typography.fontSize.label,
+  greeting: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
+  },
+  userName: {
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    color: colors.ngx,
-    letterSpacing: typography.letterSpacing.wider,
+    color: colors.text,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatarContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+  notificationButton: {
+    width: touchTarget.min,
+    height: touchTarget.min,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: touchTarget.min / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
+  notificationBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.error,
+    borderWidth: 2,
+    borderColor: colors.void,
+  },
+
+  // Content
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: layout.contentPadding,
     paddingBottom: layout.contentPaddingBottom,
+    gap: spacing.lg,
   },
-  seasonLabel: {
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    textTransform: 'uppercase',
-  },
-  subtitle: {
-    fontSize: typography.fontSize.label,
-    color: colors.chromeDark,
-    marginTop: 8,
-  },
-  todayLabel: {
-    fontSize: typography.fontSize.label,
-    color: colors.textMuted,
-    marginTop: 4,
-    marginBottom: spacing.xl,
-  },
-  missionCard: {
-    marginBottom: spacing.lg,
-  },
-  missionHeader: {
+
+  // Season Badge
+  seasonBadge: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  missionTitle: {
-    fontSize: typography.fontSize.xl,
-    color: colors.text,
-    marginVertical: 4,
-  },
-  missionStatus: {
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-    flexWrap: 'wrap',
-  },
-  progressRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
+    gap: spacing.xs,
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: 'rgba(109, 0, 255, 0.1)',
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(109, 0, 255, 0.2)',
   },
-  progressDots: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  progressDotActive: {
+  seasonDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.ngx,
   },
-  progressDotCurrent: {
-    backgroundColor: 'rgba(109, 0, 255, 0.4)',
+  seasonText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.ngx,
+    letterSpacing: 1.5,
   },
-  rescheduleButton: {
-    marginTop: 12,
+
+  // Hero Card
+  heroCard: {
+    marginTop: spacing.xs,
   },
-  coachCard: {
+  heroContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: spacing.lg,
   },
-  coachRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 8,
-  },
-  coachAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 245, 170, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 245, 170, 0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coachContent: {
+  heroInfo: {
     flex: 1,
+    paddingRight: spacing.md,
+  },
+  heroTitle: {
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginTop: spacing.xs,
+  },
+  heroSubtitle: {
+    fontSize: typography.fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  heroMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    gap: spacing.md,
+  },
+  metaItem: {
+    alignItems: 'center',
+  },
+  metaValue: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+  },
+  metaLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  metaDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  heroProgress: {
+    alignItems: 'center',
+  },
+  heroCta: {
+    marginBottom: spacing.md,
+  },
+  heroActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  heroActionText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
+  },
+  heroActionDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginHorizontal: spacing.xs,
+  },
+
+  // Section
+  sectionTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: -spacing.sm,
+  },
+
+  // Stats
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: '47%',
+  },
+
+  // Coach Card
+  coachCard: {
+    borderColor: 'rgba(0, 245, 170, 0.25)',
+  },
+  coachHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  coachBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(0, 245, 170, 0.15)',
+    borderRadius: 100,
+  },
+  coachBadgeText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.mint,
+    letterSpacing: 1.5,
+  },
+  coachTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   coachMessage: {
     fontSize: typography.fontSize.base,
-    color: colors.text,
-    marginVertical: 4,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginBottom: spacing.md,
   },
-  unreadRow: {
+  coachCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.xs,
+    alignSelf: 'flex-start',
   },
-  metricsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: spacing.lg,
+  coachCtaText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.mint,
   },
-  metricCard: {
-    width: '48%',
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  metricIcon: {
-    marginBottom: 4,
-  },
-  metricValue: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    marginVertical: 4,
-  },
+
+  // GENESIS Card
   genesisCard: {
-    marginBottom: spacing.lg,
+    paddingVertical: spacing.md,
   },
-  genesisRow: {
+  genesisContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.md,
+  },
+  genesisIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(109, 0, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(109, 0, 255, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  genesisText: {
+    flex: 1,
   },
   genesisTitle: {
-    fontSize: typography.fontSize.xl,
-    color: colors.text,
-    marginVertical: 4,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.ngx,
+    letterSpacing: 2,
+  },
+  genesisSubtitle: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
+    marginTop: 2,
   },
 });

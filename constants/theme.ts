@@ -10,6 +10,8 @@ export const colors = {
   // Primary - NGX Violet
   ngx: '#6D00FF',
   primary: '#6D00FF',
+  primaryLight: '#8B33FF',
+  primaryDark: '#5500CC',
 
   // Secondary - Mint (coach, success)
   mint: '#00F5AA',
@@ -27,10 +29,10 @@ export const colors = {
   chromeDark: '#808080',
   chromeLight: '#E8E8E8',
 
-  // Text
+  // Text (WCAG AA compliant - min 4.5:1 contrast ratio)
   text: '#FFFFFF',
-  textSecondary: 'rgba(255, 255, 255, 0.7)',
-  textMuted: 'rgba(255, 255, 255, 0.4)',
+  textSecondary: 'rgba(255, 255, 255, 0.85)', // ≥4.5:1 contrast on dark bg
+  textMuted: 'rgba(255, 255, 255, 0.6)',      // ≥4.5:1 contrast on dark bg
 
   // Semantic
   success: '#00F5AA',
@@ -56,13 +58,29 @@ export const colors = {
   tabBarBorder: 'rgba(255, 255, 255, 0.1)',
 } as const;
 
+// 8px grid system for consistent spacing
 export const spacing = {
   xs: 4,
   sm: 8,
   md: 16,
-  lg: 20, // padding horizontal del prototype
-  xl: 24,
-  xxl: 32,
+  lg: 24,  // Fixed: was 20, now 8px multiple
+  xl: 32,  // Fixed: was 24, now 8px multiple
+  xxl: 40, // Fixed: was 32, now 8px multiple
+} as const;
+
+// Avatar size scale for consistent circular elements
+export const avatarSizes = {
+  xs: 32,  // Small icons in lists
+  sm: 40,  // Coach avatar, small user icons
+  md: 48,  // Standard avatar
+  lg: 64,  // Profile card
+  xl: 80,  // Large profile display
+  xxl: 120, // Profile screen header
+} as const;
+
+// Minimum touch target size (44pt per Apple HIG / WCAG)
+export const touchTarget = {
+  min: 44,
 } as const;
 
 export const borderRadius = {
@@ -218,18 +236,20 @@ export const layout = {
   fabBottom: 86,
   fabRight: 18,
 
-  // Content padding
-  contentPadding: 20,
-  contentPaddingBottom: 100, // space for tab bar
+  // Content padding (8px grid aligned)
+  contentPadding: 24, // Fixed: was 20, now 8px multiple
+  contentPaddingBottom: 104, // Fixed: was 100, now 8px multiple (space for tab bar)
 
-  // Card gaps
+  // Card gaps (8px grid aligned)
   cardGap: 16,
-  gridGap: 12,
+  gridGap: 16, // Fixed: was 12, now 8px multiple
 } as const;
 
 export const theme = {
   colors,
   spacing,
+  avatarSizes,
+  touchTarget,
   borderRadius,
   typography,
   shadows,

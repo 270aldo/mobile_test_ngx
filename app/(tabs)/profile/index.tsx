@@ -2,8 +2,6 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  Hexagon,
-  User,
   Crown,
   Settings,
   Bell,
@@ -13,115 +11,97 @@ import {
   ChevronRight,
   CreditCard,
   Calendar,
+  Zap,
+  Edit3,
 } from 'lucide-react-native';
-import { GlassCard, Button, Label, StatusPill } from '@/components/ui';
+import { GlassCard, StatusPill } from '@/components/ui';
 import { useAuthStore, useUser } from '@/stores/auth';
-import { colors, spacing, typography, gradients, layout, borderRadius } from '@/constants/theme';
+import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
 
 const menuItems = [
-  {
-    id: 'settings',
-    icon: Settings,
-    label: 'Configuración',
-    sublabel: 'Preferencias de la app',
-  },
-  {
-    id: 'notifications',
-    icon: Bell,
-    label: 'Notificaciones',
-    sublabel: 'Gestionar alertas',
-  },
-  {
-    id: 'billing',
-    icon: CreditCard,
-    label: 'Suscripción',
-    sublabel: 'Plan y facturación',
-  },
-  {
-    id: 'privacy',
-    icon: Shield,
-    label: 'Privacidad',
-    sublabel: 'Seguridad de datos',
-  },
-  {
-    id: 'help',
-    icon: HelpCircle,
-    label: 'Ayuda',
-    sublabel: 'Soporte y FAQ',
-  },
+  { id: 'settings', icon: Settings, label: 'Configuración', sublabel: 'Preferencias de app' },
+  { id: 'notifications', icon: Bell, label: 'Notificaciones', sublabel: 'Gestionar alertas' },
+  { id: 'billing', icon: CreditCard, label: 'Facturación', sublabel: 'Plan y pagos' },
+  { id: 'privacy', icon: Shield, label: 'Privacidad', sublabel: 'Seguridad de datos' },
+  { id: 'help', icon: HelpCircle, label: 'Ayuda', sublabel: 'Soporte y FAQ' },
 ];
 
-/**
- * ProfileScreen - DATA VAULT
- *
- * Basado en: mobile_genesis_hybrid_v2_flow.html
- * Perfil de usuario con suscripción y configuración
- */
 export default function ProfileScreen() {
   const user = useUser();
   const signOut = useAuthStore((s) => s.signOut);
 
   const userName = user?.user_metadata?.full_name || 'NGX Athlete';
   const userEmail = user?.email || 'athlete@ngx.com';
+  const userInitial = userName.charAt(0).toUpperCase();
 
   const handleSignOut = () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro que quieres salir?', [
       { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Salir',
-        style: 'destructive',
-        onPress: signOut,
-      },
+      { text: 'Salir', style: 'destructive', onPress: signOut },
     ]);
   };
 
   return (
     <View style={styles.container}>
-      {/* Background gradient */}
+      {/* Premium gradient background */}
       <LinearGradient
-        colors={gradients.background}
+        colors={['#0A0A0F', '#0D0B14', '#050505']}
+        locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Hexagon size={16} color={colors.ngx} />
-              <Text style={styles.headerLogo}>NGX.GENESIS</Text>
-            </View>
-            <Pressable style={styles.settingsButton}>
-              <Settings size={18} color={colors.chrome} />
-            </Pressable>
-          </View>
+          <Text style={styles.headerTitle}>Perfil</Text>
+          <Pressable style={styles.settingsButton}>
+            <Settings size={20} color={colors.text} />
+          </Pressable>
         </View>
 
-        {/* Content */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Title */}
-          <View style={styles.titleSection}>
-            <Label>Data Vault</Label>
-            <Text style={styles.title}>TU PERFIL</Text>
-          </View>
-
-          {/* User Card */}
-          <GlassCard style={styles.userCard}>
-            <View style={styles.userRow}>
-              <View style={styles.avatarLarge}>
-                <User size={32} color={colors.text} />
-              </View>
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{userName}</Text>
-                <Label color="chrome">{userEmail}</Label>
-                <View style={styles.memberBadge}>
-                  <Crown size={12} color={colors.ngx} />
-                  <Text style={styles.memberText}>GENESIS Pro</Text>
+          {/* Profile Card */}
+          <GlassCard variant="elevated" style={styles.profileCard}>
+            <View style={styles.profileContent}>
+              <View style={styles.avatarSection}>
+                <View style={styles.avatarLarge}>
+                  <Text style={styles.avatarText}>{userInitial}</Text>
                 </View>
+                <Pressable style={styles.editAvatar}>
+                  <Edit3 size={12} color={colors.text} />
+                </Pressable>
+              </View>
+
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>{userName}</Text>
+                <Text style={styles.profileEmail}>{userEmail}</Text>
+
+                <View style={styles.proBadge}>
+                  <Crown size={12} color={colors.ngx} />
+                  <Text style={styles.proBadgeText}>GENESIS PRO</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Stats Row */}
+            <View style={styles.profileStats}>
+              <View style={styles.profileStat}>
+                <Text style={styles.profileStatValue}>42</Text>
+                <Text style={styles.profileStatLabel}>Workouts</Text>
+              </View>
+              <View style={styles.profileStatDivider} />
+              <View style={styles.profileStat}>
+                <Text style={styles.profileStatValue}>14</Text>
+                <Text style={styles.profileStatLabel}>Semanas</Text>
+              </View>
+              <View style={styles.profileStatDivider} />
+              <View style={styles.profileStat}>
+                <Text style={styles.profileStatValue}>3</Text>
+                <Text style={styles.profileStatLabel}>PRs</Text>
               </View>
             </View>
           </GlassCard>
@@ -129,89 +109,65 @@ export default function ProfileScreen() {
           {/* Subscription Card */}
           <GlassCard style={styles.subscriptionCard}>
             <View style={styles.subscriptionHeader}>
-              <View>
-                <Label>Tu Suscripción</Label>
-                <Text style={styles.subscriptionPlan}>NGX GENESIS Pro</Text>
+              <View style={styles.subscriptionInfo}>
+                <View style={styles.planBadge}>
+                  <Zap size={14} color={colors.ngx} />
+                  <Text style={styles.planName}>NGX GENESIS Pro</Text>
+                </View>
+                <Text style={styles.planPrice}>$199/mes</Text>
               </View>
               <StatusPill>Activo</StatusPill>
             </View>
 
-            <View style={styles.subscriptionDetails}>
-              <View style={styles.subscriptionStat}>
-                <Calendar size={14} color={colors.chromeDark} />
-                <Label color="chrome">Próxima renovación: 15 Feb 2025</Label>
+            <View style={styles.subscriptionMeta}>
+              <View style={styles.metaRow}>
+                <Calendar size={14} color={colors.textMuted} />
+                <Text style={styles.metaText}>Próxima renovación: 15 Feb 2025</Text>
               </View>
-              <View style={styles.subscriptionStat}>
-                <CreditCard size={14} color={colors.chromeDark} />
-                <Label color="chrome">$199/mes</Label>
+              <View style={styles.metaRow}>
+                <Crown size={14} color={colors.textMuted} />
+                <Text style={styles.metaText}>Miembro desde Dic 2024</Text>
               </View>
             </View>
 
-            <View style={styles.subscriptionActions}>
-              <Button variant="chip" onPress={() => {}} style={styles.subscriptionChip}>
-                Cambiar plan
-              </Button>
-              <Button variant="chip" onPress={() => {}} style={styles.subscriptionChip}>
-                Ver facturación
-              </Button>
-            </View>
+            <Pressable style={styles.managePlan}>
+              <Text style={styles.managePlanText}>Gestionar suscripción</Text>
+              <ChevronRight size={16} color={colors.ngx} />
+            </Pressable>
           </GlassCard>
 
-          {/* Stats Summary */}
-          <View style={styles.statsRow}>
-            <GlassCard style={styles.miniStatCard}>
-              <Text style={styles.miniStatValue}>42</Text>
-              <Label color="chrome">Workouts</Label>
-            </GlassCard>
-            <GlassCard style={styles.miniStatCard}>
-              <Text style={styles.miniStatValue}>14</Text>
-              <Label color="chrome">Semanas</Label>
-            </GlassCard>
-            <GlassCard style={styles.miniStatCard}>
-              <Text style={styles.miniStatValue}>3</Text>
-              <Label color="chrome">PRs</Label>
-            </GlassCard>
-          </View>
-
-          {/* Menu Items */}
-          <View style={styles.menuSection}>
-            <Label>Cuenta</Label>
-            {menuItems.map((item) => (
-              <Pressable key={item.id}>
-                <GlassCard style={styles.menuItem}>
-                  <View style={styles.menuRow}>
-                    <View style={styles.menuIconContainer}>
-                      <item.icon size={18} color={colors.ngx} />
-                    </View>
-                    <View style={styles.menuContent}>
-                      <Text style={styles.menuLabel}>{item.label}</Text>
-                      <Label color="chrome">{item.sublabel}</Label>
-                    </View>
-                    <ChevronRight size={18} color={colors.chromeDark} />
+          {/* Menu */}
+          <Text style={styles.sectionTitle}>Cuenta</Text>
+          <GlassCard style={styles.menuCard} padding="none">
+            {menuItems.map((item, index) => (
+              <View key={item.id}>
+                <Pressable style={styles.menuItem}>
+                  <View style={styles.menuIcon}>
+                    <item.icon size={18} color={colors.ngx} />
                   </View>
-                </GlassCard>
-              </Pressable>
+                  <View style={styles.menuContent}>
+                    <Text style={styles.menuLabel}>{item.label}</Text>
+                    <Text style={styles.menuSublabel}>{item.sublabel}</Text>
+                  </View>
+                  <ChevronRight size={18} color={colors.textMuted} />
+                </Pressable>
+                {index < menuItems.length - 1 && (
+                  <View style={styles.menuDivider} />
+                )}
+              </View>
             ))}
-          </View>
+          </GlassCard>
 
           {/* Sign Out */}
-          <Button
-            variant="secondary"
-            onPress={handleSignOut}
-            fullWidth
-            style={styles.signOutButton}
-            testID="sign-out-button"
-          >
-            <View style={styles.signOutContent}>
-              <LogOut size={18} color={colors.error} />
-              <Text style={styles.signOutText}>Cerrar Sesión</Text>
-            </View>
-          </Button>
+          <Pressable style={styles.signOutButton} onPress={handleSignOut}>
+            <LogOut size={18} color={colors.error} />
+            <Text style={styles.signOutText}>Cerrar Sesión</Text>
+          </Pressable>
 
-          {/* App Version */}
+          {/* Version */}
           <View style={styles.versionSection}>
-            <Label color="chrome">NGX GENESIS HYBRID v1.0.0</Label>
-            <Label color="chrome">Build 2025.01.23</Label>
+            <Text style={styles.versionText}>NGX GENESIS HYBRID v1.0.0</Text>
+            <Text style={styles.versionBuild}>Build 2025.01.24</Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -227,162 +183,211 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+
+  // Header
   header: {
-    height: layout.headerHeight,
-    justifyContent: 'flex-end',
-    paddingHorizontal: layout.contentPadding,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: layout.contentPadding,
+    paddingVertical: spacing.md,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerLogo: {
-    fontSize: typography.fontSize.label,
+  headerTitle: {
+    fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
-    color: colors.ngx,
-    letterSpacing: typography.letterSpacing.wider,
+    color: colors.text,
   },
   settingsButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: touchTarget.min,
+    height: touchTarget.min,
+    borderRadius: touchTarget.min / 2,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  // Content
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: layout.contentPadding,
     paddingBottom: layout.contentPaddingBottom,
+    gap: spacing.lg,
   },
-  titleSection: {
-    marginBottom: spacing.xl,
-  },
-  title: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    textTransform: 'uppercase',
-    marginTop: 4,
-  },
-  userCard: {
-    marginBottom: spacing.lg,
-  },
-  userRow: {
+
+  // Profile Card
+  profileCard: {},
+  profileContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  avatarSection: {
+    position: 'relative',
   },
   avatarLarge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: colors.ngx,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(109, 0, 255, 0.4)',
   },
-  userInfo: {
+  avatarText: {
+    fontSize: 32,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+  },
+  editAvatar: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.void,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileInfo: {
     flex: 1,
   },
-  userName: {
+  profileName: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
-    marginBottom: 2,
   },
-  memberBadge: {
+  profileEmail: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  proBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 8,
-    backgroundColor: 'rgba(109, 0, 255, 0.15)',
-    paddingHorizontal: 10,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 4,
-    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(109, 0, 255, 0.12)',
+    borderRadius: 100,
     alignSelf: 'flex-start',
   },
-  memberText: {
-    fontSize: typography.fontSize.label,
+  proBadgeText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
     color: colors.ngx,
-    fontWeight: typography.fontWeight.medium,
-    textTransform: 'uppercase',
-    letterSpacing: typography.letterSpacing.wider,
+    letterSpacing: 1.5,
   },
+  profileStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  profileStat: {
+    alignItems: 'center',
+  },
+  profileStatValue: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+  },
+  profileStatLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  profileStatDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+
+  // Subscription
   subscriptionCard: {
-    marginBottom: spacing.lg,
-    borderColor: 'rgba(109, 0, 255, 0.3)',
+    borderColor: 'rgba(109, 0, 255, 0.25)',
     borderWidth: 1,
   },
   subscriptionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
-  subscriptionPlan: {
+  subscriptionInfo: {},
+  planBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  planName: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
-    marginTop: 4,
   },
-  subscriptionDetails: {
-    gap: 8,
-    marginBottom: 16,
+  planPrice: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
+    marginTop: 2,
   },
-  subscriptionStat: {
+  subscriptionMeta: {
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
-  subscriptionActions: {
+  metaText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
+  },
+  managePlan: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  subscriptionChip: {
-    flex: 1,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: spacing.xl,
-  },
-  miniStatCard: {
-    flex: 1,
     alignItems: 'center',
-    paddingVertical: 16,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
-  miniStatValue: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    marginBottom: 4,
+  managePlanText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.ngx,
   },
-  menuSection: {
-    marginBottom: spacing.xl,
+
+  // Menu
+  sectionTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: -spacing.sm,
   },
+  menuCard: {},
   menuItem: {
-    marginTop: spacing.sm,
-  },
-  menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    padding: spacing.md,
+    gap: spacing.md,
   },
-  menuIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  menuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: 'rgba(109, 0, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -394,24 +399,48 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: colors.text,
-    marginBottom: 2,
   },
+  menuSublabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    marginHorizontal: spacing.md,
+  },
+
+  // Sign Out
   signOutButton: {
-    marginBottom: spacing.lg,
-    borderColor: colors.error,
-  },
-  signOutContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    backgroundColor: 'rgba(255, 71, 87, 0.08)',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 71, 87, 0.2)',
   },
   signOutText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: colors.error,
   },
+
+  // Version
   versionSection: {
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
+  },
+  versionText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+  },
+  versionBuild: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    opacity: 0.6,
   },
 });

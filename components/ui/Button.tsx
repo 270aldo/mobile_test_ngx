@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   Pressable,
   Text,
@@ -7,8 +7,10 @@ import {
   ViewStyle,
   TextStyle,
   StyleProp,
+  AccessibilityRole,
 } from 'react-native';
-import { colors, borderRadius, spacing, typography, shadows } from '@/constants/theme';
+import * as Haptics from 'expo-haptics';
+import { colors, borderRadius, spacing, typography, shadows, touchTarget } from '@/constants/theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'mint' | 'chip' | 'ghost' | 'coach' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -24,6 +26,9 @@ interface ButtonProps {
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   testID?: string;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  haptic?: boolean; // Enable haptic feedback (default: true for primary/mint/coach)
 }
 
 /**
@@ -48,17 +53,37 @@ export function Button({
   style,
   textStyle,
   testID,
+  accessibilityLabel,
+  accessibilityHint,
+  haptic,
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
   const variantStyles = getVariantStyles(variant);
   const sizeStyles = getSizeStyles(size);
 
+  // Derive accessible label from children if not provided
+  const label = accessibilityLabel || (typeof children === 'string' ? children : undefined);
+
+  // Haptic feedback enabled by default for primary action buttons
+  const shouldHaptic = haptic ?? ['primary', 'mint', 'coach', 'danger'].includes(variant);
+
+  const handlePress = useCallback(() => {
+    if (shouldHaptic) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    onPress();
+  }, [onPress, shouldHaptic]);
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       disabled={isDisabled}
       testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: isDisabled }}
       style={({ pressed }) => [
         styles.button,
         variantStyles.button,
@@ -74,20 +99,25 @@ export function Button({
           color={variant === 'mint' || variant === 'coach' ? colors.void : colors.text}
           size="small"
         />
-      ) : typeof children === 'string' ? (
-        <Text
-          style={[
-            styles.text,
-            variantStyles.text,
-            sizeStyles.text,
-            isDisabled && styles.textDisabled,
-            textStyle,
-          ]}
-        >
-          {children}
-        </Text>
       ) : (
-        children
+        React.Children.map(children, (child) => {
+          if (typeof child === 'string') {
+            return (
+              <Text
+                style={[
+                  styles.text,
+                  variantStyles.text,
+                  sizeStyles.text,
+                  isDisabled && styles.textDisabled,
+                  textStyle,
+                ]}
+              >
+                {child}
+              </Text>
+            );
+          }
+          return child;
+        })
       )}
     </Pressable>
   );
@@ -240,6 +270,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: touchTarget.min, // WCAG: 44pt minimum touch target
   },
   text: {
     textAlign: 'center',
