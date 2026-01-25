@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, ViewStyle, StyleProp } from 'react-native';
+import { StyleSheet, View, ViewStyle, StyleProp, Image, ImageSourcePropType } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, borderRadius, spacing, gradients } from '@/constants/theme';
@@ -13,6 +13,7 @@ interface GlassCardProps {
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | number;
   highlight?: boolean;
   variant?: CardVariant;
+  backgroundImage?: ImageSourcePropType;
   testID?: string;
 }
 
@@ -32,6 +33,7 @@ export function GlassCard({
   padding = 'lg',
   highlight = true,
   variant = 'default',
+  backgroundImage,
   testID,
 }: GlassCardProps) {
   const paddingMap = {
@@ -62,6 +64,19 @@ export function GlassCard({
       {/* Outer glow for elevated variant */}
       {variant === 'elevated' && (
         <View style={styles.outerGlow} />
+      )}
+
+      {/* Optional Background Image */}
+      {backgroundImage && (
+        <>
+          <Image
+            source={backgroundImage}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+          />
+          {/* Dark overlay for text legibility on images */}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(5, 5, 5, 0.6)' }]} />
+        </>
       )}
 
       <BlurView

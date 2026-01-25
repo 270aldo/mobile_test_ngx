@@ -16,6 +16,9 @@ import {
 } from 'lucide-react-native';
 import { GlassCard, StatusPill } from '@/components/ui';
 import { useAuthStore, useUser } from '@/stores/auth';
+import { useProfile, useSubscription } from '@/stores/profile';
+import { useBadges } from '@/stores/progress';
+import { useWeekWorkouts } from '@/stores/season';
 import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
 
 const menuItems = [
@@ -28,11 +31,31 @@ const menuItems = [
 
 export default function ProfileScreen() {
   const user = useUser();
+  const profile = useProfile();
+  const subscription = useSubscription();
+  const badges = useBadges();
+  const weekWorkouts = useWeekWorkouts();
   const signOut = useAuthStore((s) => s.signOut);
 
-  const userName = user?.user_metadata?.full_name || 'NGX Athlete';
-  const userEmail = user?.email || 'athlete@ngx.com';
+  // User info with fallbacks
+  const userName = profile?.full_name || user?.user_metadata?.full_name || 'NGX Athlete';
+  const userEmail = profile?.email || user?.email || 'athlete@ngx.com';
   const userInitial = userName.charAt(0).toUpperCase();
+
+  // Subscription info
+  const planName = subscription?.plan?.replace('_', ' ').toUpperCase() || 'GENESIS';
+  const planPrice = subscription?.price_monthly ? `$${subscription.price_monthly}` : '$199';
+  const isActive = subscription?.status === 'active';
+  const renewalDate = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+    : 'N/A';
+  const memberSince = subscription?.current_period_start
+    ? new Date(subscription.current_period_start).toLocaleDateString('es-MX', { month: 'short', year: 'numeric' })
+    : 'Dic 2024';
+
+  // Stats
+  const totalWorkouts = weekWorkouts?.filter(w => w.status === 'completed').length ?? 0;
+  const prCount = badges?.filter(b => b.badge_type === 'pr').length ?? 0;
 
   const handleSignOut = () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro que quieres salir?', [
@@ -90,17 +113,17 @@ export default function ProfileScreen() {
             {/* Stats Row */}
             <View style={styles.profileStats}>
               <View style={styles.profileStat}>
-                <Text style={styles.profileStatValue}>42</Text>
+                <Text style={styles.profileStatValue}>{totalWorkouts}</Text>
                 <Text style={styles.profileStatLabel}>Workouts</Text>
               </View>
               <View style={styles.profileStatDivider} />
               <View style={styles.profileStat}>
-                <Text style={styles.profileStatValue}>14</Text>
-                <Text style={styles.profileStatLabel}>Semanas</Text>
+                <Text style={styles.profileStatValue}>{profile?.training_days_per_week ?? 4}</Text>
+                <Text style={styles.profileStatLabel}>días/sem</Text>
               </View>
               <View style={styles.profileStatDivider} />
               <View style={styles.profileStat}>
-                <Text style={styles.profileStatValue}>3</Text>
+                <Text style={styles.profileStatValue}>{prCount}</Text>
                 <Text style={styles.profileStatLabel}>PRs</Text>
               </View>
             </View>
@@ -112,21 +135,21 @@ export default function ProfileScreen() {
               <View style={styles.subscriptionInfo}>
                 <View style={styles.planBadge}>
                   <Zap size={14} color={colors.ngx} />
-                  <Text style={styles.planName}>NGX GENESIS Pro</Text>
+                  <Text style={styles.planName}>{planName}</Text>
                 </View>
-                <Text style={styles.planPrice}>$199/mes</Text>
+                <Text style={styles.planPrice}>{planPrice}/mes</Text>
               </View>
-              <StatusPill>Activo</StatusPill>
+              <StatusPill>{isActive ? 'Activo' : 'Inactivo'}</StatusPill>
             </View>
 
             <View style={styles.subscriptionMeta}>
               <View style={styles.metaRow}>
                 <Calendar size={14} color={colors.textMuted} />
-                <Text style={styles.metaText}>Próxima renovación: 15 Feb 2025</Text>
+                <Text style={styles.metaText}>Próxima renovación: {renewalDate}</Text>
               </View>
               <View style={styles.metaRow}>
                 <Crown size={14} color={colors.textMuted} />
-                <Text style={styles.metaText}>Miembro desde Dic 2024</Text>
+                <Text style={styles.metaText}>Miembro desde {memberSince}</Text>
               </View>
             </View>
 

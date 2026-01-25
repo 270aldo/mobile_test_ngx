@@ -9,3 +9,4 @@ export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
 export { ProgressRing } from './ProgressRing';
 export { StatCard } from './StatCard';
+export { CoachNoteCard } from './CoachNoteCard';

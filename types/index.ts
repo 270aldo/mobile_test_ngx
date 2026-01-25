@@ -1,13 +1,56 @@
 /**
  * NGX GENESIS Type Definitions
+ *
+ * Primary types are generated from Supabase schema in database.ts
+ * This file re-exports those types and defines additional app-specific types
  */
 
 import type { User, Session } from '@supabase/supabase-js';
+import type { Tables } from './database';
 
-// Re-export Supabase types
+// Re-export Supabase auth types
 export type { User, Session };
 
-// Auth types
+// Re-export all database types
+export type {
+  Database,
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+  Json,
+} from './database';
+
+// Convenience type aliases for table rows
+// These use the generated types from Supabase
+export type Profile = Tables<'profiles'>;
+export type Subscription = Tables<'subscriptions'>;
+export type CoachAssignment = Tables<'coach_assignments'>;
+export type Season = Tables<'seasons'>;
+export type Workout = Tables<'workouts'>;
+export type ExerciseBlock = Tables<'exercise_blocks'>;
+export type WorkoutLog = Tables<'workout_logs'>;
+export type SetLog = Tables<'set_logs'>;
+export type Checkin = Tables<'checkins'>;
+export type Message = Tables<'messages'>;
+export type CoachNote = Tables<'coach_notes'>;
+export type Badge = Tables<'badges'>;
+export type Streak = Tables<'streaks'>;
+
+// Extended types with relationships
+export type WorkoutWithExercises = Workout & {
+  exercise_blocks: ExerciseBlock[];
+};
+
+export type WorkoutWithLogs = Workout & {
+  exercise_blocks: ExerciseBlock[];
+  workout_logs: WorkoutLog[];
+};
+
+export type SeasonWithWorkouts = Season & {
+  workouts: WorkoutWithExercises[];
+};
+
+// Auth state type
 export interface AuthState {
   user: User | null;
   session: Session | null;
@@ -15,93 +58,14 @@ export interface AuthState {
   isHydrated: boolean;
 }
 
-// User profile
-export interface UserProfile {
-  id: string;
-  email: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  onboarding_completed: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-// Onboarding data
+// Onboarding data collected during registration
 export interface OnboardingData {
-  fitness_goal: 'lose_weight' | 'build_muscle' | 'improve_endurance' | 'general_fitness';
+  fitness_goal: 'fat_loss' | 'muscle_gain' | 'performance' | 'longevity' | 'general_health';
   experience_level: 'beginner' | 'intermediate' | 'advanced';
   workout_frequency: number; // days per week
   available_equipment: string[];
   injuries_limitations: string[];
   preferred_workout_time: 'morning' | 'afternoon' | 'evening' | 'flexible';
-}
-
-// Season (training phase)
-export interface Season {
-  id: string;
-  user_id: string;
-  name: string;
-  start_date: string;
-  end_date: string | null;
-  goal: string;
-  is_active: boolean;
-  created_at: string;
-}
-
-// Workout types
-export interface Workout {
-  id: string;
-  user_id: string;
-  season_id: string;
-  name: string;
-  description: string | null;
-  scheduled_date: string;
-  completed_at: string | null;
-  duration_minutes: number | null;
-  exercises: WorkoutExercise[];
-  notes: string | null;
-  created_at: string;
-}
-
-export interface WorkoutExercise {
-  id: string;
-  workout_id: string;
-  exercise_id: string;
-  exercise_name: string;
-  order_index: number;
-  sets: ExerciseSet[];
-}
-
-export interface ExerciseSet {
-  id: string;
-  set_number: number;
-  target_reps: number;
-  actual_reps: number | null;
-  target_weight: number | null;
-  actual_weight: number | null;
-  is_completed: boolean;
-  rpe: number | null; // Rate of Perceived Exertion (1-10)
-}
-
-// Chat types
-export interface ChatMessage {
-  id: string;
-  user_id: string;
-  role: 'user' | 'assistant' | 'coach';
-  content: string;
-  created_at: string;
-}
-
-// Progress types
-export interface ProgressEntry {
-  id: string;
-  user_id: string;
-  date: string;
-  weight_kg: number | null;
-  body_fat_percentage: number | null;
-  notes: string | null;
-  photos: string[];
-  created_at: string;
 }
 
 // Navigation types for expo-router
@@ -119,3 +83,24 @@ export type TabParamList = {
   'progress/index': undefined;
   'profile/index': undefined;
 };
+
+// Coach note priority type for UI display
+export type CoachNotePriority = 'info' | 'action' | 'celebration';
+
+// Streak type for consistency tracking
+export type StreakType = 'workout' | 'checkin' | 'hydration';
+
+// Message role type
+export type MessageRole = 'user' | 'genesis' | 'coach';
+
+// Workout status type
+export type WorkoutStatus = 'scheduled' | 'in_progress' | 'completed' | 'skipped';
+
+// Season phase type
+export type SeasonPhase = 'foundation' | 'construction' | 'optimization';
+
+// Subscription plan type
+export type SubscriptionPlan = 'ascend' | 'hybrid_basic' | 'hybrid_pro' | 'hybrid_elite';
+
+// Subscription status type
+export type SubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'past_due';

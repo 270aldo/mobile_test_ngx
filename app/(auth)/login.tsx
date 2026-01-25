@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  ImageBackground,
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,10 +54,18 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={[colors.background, colors.surface]}
-      style={styles.container}
-    >
+    <View style={styles.container}>
+      <ImageBackground
+        source={require('@/assets/ngx_recovery_light.png')}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+      >
+        <LinearGradient
+          colors={['rgba(5, 5, 5, 0.7)', colors.void]}
+          style={StyleSheet.absoluteFill}
+        />
+      </ImageBackground>
+
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -125,13 +134,14 @@ export default function LoginScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.void,
   },
   safeArea: {
     flex: 1,
@@ -151,8 +161,9 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: typography.fontSize['5xl'],
     fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
+    color: colors.ngx,
     marginBottom: spacing.md,
+    letterSpacing: typography.letterSpacing.widest,
   },
   title: {
     fontSize: typography.fontSize['2xl'],
@@ -175,7 +186,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   link: {
-    color: colors.primary,
+    color: colors.mint,
     fontWeight: typography.fontWeight.semibold,
   },
 });

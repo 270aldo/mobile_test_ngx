@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -23,22 +23,50 @@ import {
   PulseDot,
   ProgressRing,
   StatCard,
+  CoachNoteCard,
+  LoadingState,
 } from '@/components/ui';
 import { useUser } from '@/stores/auth';
+import { useProfile } from '@/stores/profile';
+import { useActiveSeason, useTodayWorkout, useWeekWorkouts, useSeasonLoading } from '@/stores/season';
+import { useWorkoutStreak } from '@/stores/progress';
+import { useAppData } from '@/hooks';
+import { useCoachNotesByLocation, useCoachNotes } from '@/hooks/useCoachNotes';
 import { colors, spacing, typography, layout, touchTarget } from '@/constants/theme';
 
 export default function HomeScreen() {
   const user = useUser();
   const router = useRouter();
 
+  // Fetch all app data on mount
+  useAppData();
+
+  // Store data
+  const profile = useProfile();
+  const activeSeason = useActiveSeason();
+  const todayWorkout = useTodayWorkout();
+  const weekWorkouts = useWeekWorkouts();
+  const isLoading = useSeasonLoading();
+  const workoutStreak = useWorkoutStreak();
+  const homeNotes = useCoachNotesByLocation('home');
+  const { dismiss: dismissNote } = useCoachNotes();
+
   // Calculate time-based greeting
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
 
-  // Mock data - will come from stores
-  const weekProgress = 43; // 3/7 days = 43%
-  const completedDays = 3;
-  const totalDays = 7;
+  // Calculate week progress from store data
+  const completedDays = weekWorkouts?.filter(w => w.status === 'completed').length ?? 0;
+  const totalDays = weekWorkouts?.length || 7;
+  const weekProgress = Math.round((completedDays / totalDays) * 100);
+
+  // Display name from profile or email fallback
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Atleta';
+
+  // Season info
+  const seasonNumber = activeSeason?.number ?? 1;
+  const weekNumber = activeSeason?.current_week ?? 1;
+  const phaseName = activeSeason?.current_phase?.toUpperCase() ?? 'FOUNDATION';
 
   return (
     <View style={styles.container}>
@@ -64,7 +92,7 @@ export default function HomeScreen() {
             <Hexagon size={20} color={colors.ngx} fill={colors.ngx} fillOpacity={0.2} />
             <View>
               <Text style={styles.greeting}>{greeting}</Text>
-              <Text style={styles.userName}>{user?.email?.split('@')[0] || 'Atleta'}</Text>
+              <Text style={styles.userName}>{displayName}</Text>
             </View>
           </View>
           <Pressable style={styles.notificationButton}>
@@ -82,73 +110,92 @@ export default function HomeScreen() {
           {/* Season Badge */}
           <View style={styles.seasonBadge}>
             <View style={styles.seasonDot} />
-            <Text style={styles.seasonText}>SEASON 2 • WEEK 3 • FOUNDATION</Text>
+            <Text style={styles.seasonText}>SEASON {seasonNumber} • WEEK {weekNumber} • {phaseName}</Text>
           </View>
 
           {/* Hero Mission Card */}
-          <GlassCard variant="hero" style={styles.heroCard}>
-            <View style={styles.heroContent}>
-              {/* Left: Info */}
-              <View style={styles.heroInfo}>
-                <Label color="ngx">Misión del día</Label>
-                <Text style={styles.heroTitle}>Upper Body</Text>
-                <Text style={styles.heroSubtitle}>Push // Fuerza</Text>
+          {todayWorkout ? (
+            <GlassCard
+              variant="hero"
+              style={styles.heroCard}
+              backgroundImage={require('@/assets/ngx_gym_lift.png')}
+            >
+              <View style={styles.heroContent}>
+                {/* Left: Info */}
+                <View style={styles.heroInfo}>
+                  <Label color="ngx">Misión del día</Label>
+                  <Text style={styles.heroTitle}>{todayWorkout.title}</Text>
+                  <Text style={styles.heroSubtitle}>
+                    {todayWorkout.type || 'Fuerza'} // {todayWorkout.focus_muscles?.join(', ') || 'General'}
+                  </Text>
 
-                <View style={styles.heroMeta}>
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaValue}>45</Text>
-                    <Text style={styles.metaLabel}>min</Text>
+                  <View style={styles.heroMeta}>
+                    <View style={styles.metaItem}>
+                      <Text style={styles.metaValue}>{todayWorkout.estimated_duration_minutes || 45}</Text>
+                      <Text style={styles.metaLabel}>min</Text>
+                    </View>
+                    <View style={styles.metaDivider} />
+                    <View style={styles.metaItem}>
+                      <Text style={styles.metaValue}>{todayWorkout.exercise_blocks?.length || 5}</Text>
+                      <Text style={styles.metaLabel}>ejercicios</Text>
+                    </View>
+                    <View style={styles.metaDivider} />
+                    <View style={styles.metaItem}>
+                      <Text style={styles.metaValue}>Dif</Text>
+                      <Text style={styles.metaLabel}>{todayWorkout.difficulty || 7}/10</Text>
+                    </View>
                   </View>
-                  <View style={styles.metaDivider} />
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaValue}>5</Text>
-                    <Text style={styles.metaLabel}>ejercicios</Text>
-                  </View>
-                  <View style={styles.metaDivider} />
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaValue}>RPE</Text>
-                    <Text style={styles.metaLabel}>7-8</Text>
-                  </View>
+                </View>
+
+                {/* Right: Progress Ring */}
+                <View style={styles.heroProgress}>
+                  <ProgressRing
+                    progress={weekProgress}
+                    size={90}
+                    strokeWidth={6}
+                    value={`${completedDays}/${totalDays}`}
+                    sublabel="semana"
+                  />
                 </View>
               </View>
 
-              {/* Right: Progress Ring */}
-              <View style={styles.heroProgress}>
-                <ProgressRing
-                  progress={weekProgress}
-                  size={90}
-                  strokeWidth={6}
-                  value={`${completedDays}/${totalDays}`}
-                  sublabel="semana"
-                />
+              {/* CTA Button */}
+              <Button
+                variant="primary"
+                onPress={() => router.push('/(tabs)/train')}
+                fullWidth
+                testID="start-workout-button"
+                style={styles.heroCta}
+              >
+                <Play size={18} color={colors.text} style={{ marginRight: 8 }} />
+                Iniciar sesión
+              </Button>
+
+              {/* Secondary actions */}
+              <View style={styles.heroActions}>
+                <Pressable style={styles.heroAction}>
+                  <Calendar size={14} color={colors.textMuted} />
+                  <Text style={styles.heroActionText}>Reprogramar</Text>
+                </Pressable>
+                <View style={styles.heroActionDivider} />
+                <Pressable style={styles.heroAction}>
+                  <Text style={styles.heroActionText}>Ver detalles</Text>
+                  <ChevronRight size={14} color={colors.textMuted} />
+                </Pressable>
               </View>
-            </View>
-
-            {/* CTA Button */}
-            <Button
-              variant="primary"
-              onPress={() => router.push('/(tabs)/train')}
-              fullWidth
-              testID="start-workout-button"
-              style={styles.heroCta}
-            >
-              <Play size={18} color={colors.text} style={{ marginRight: 8 }} />
-              Iniciar sesión
-            </Button>
-
-            {/* Secondary actions */}
-            <View style={styles.heroActions}>
-              <Pressable style={styles.heroAction}>
-                <Calendar size={14} color={colors.textMuted} />
-                <Text style={styles.heroActionText}>Reprogramar</Text>
-              </Pressable>
-              <View style={styles.heroActionDivider} />
-              <Pressable style={styles.heroAction}>
-                <Text style={styles.heroActionText}>Ver detalles</Text>
-                <ChevronRight size={14} color={colors.textMuted} />
-              </Pressable>
-            </View>
-          </GlassCard>
+            </GlassCard>
+          ) : (
+            <GlassCard variant="hero" style={styles.heroCard}>
+              <View style={styles.restDayContent}>
+                <Text style={styles.restDayTitle}>Día de descanso</Text>
+                <Text style={styles.restDaySubtitle}>
+                  {workoutStreak?.current_count
+                    ? `Racha actual: ${workoutStreak.current_count} días`
+                    : 'Recupera y vuelve más fuerte'}
+                </Text>
+              </View>
+            </GlassCard>
+          )}
 
           {/* Stats Grid */}
           <Text style={styles.sectionTitle}>Métricas del día</Text>
@@ -191,26 +238,19 @@ export default function HomeScreen() {
             />
           </View>
 
-          {/* Coach Card */}
-          <GlassCard variant="mint" style={styles.coachCard}>
-            <View style={styles.coachHeader}>
-              <View style={styles.coachBadge}>
-                <Text style={styles.coachBadgeText}>COACH</Text>
-              </View>
-              <PulseDot color="mint" size={8} />
-            </View>
-
-            <Text style={styles.coachTitle}>Gran progreso esta semana</Text>
-            <Text style={styles.coachMessage}>
-              Tu consistencia está pagando dividendos. El incremento en press de banca confirma que la fase foundation funciona.
-            </Text>
-
-            <Pressable style={styles.coachCta}>
-              <MessageCircle size={14} color={colors.mint} />
-              <Text style={styles.coachCtaText}>Responder al coach</Text>
-              <ChevronRight size={14} color={colors.mint} />
-            </Pressable>
-          </GlassCard>
+          {/* Coach Notes */}
+          {homeNotes.length > 0 && homeNotes.map((note) => (
+            <CoachNoteCard
+              key={note.id}
+              title={note.title}
+              content={note.content}
+              priority={(note.priority as 'info' | 'action' | 'celebration') ?? 'info'}
+              ctaText={note.cta_text ?? undefined}
+              onCtaPress={note.cta_action ? () => router.push(note.cta_action as any) : undefined}
+              onDismiss={() => dismissNote(note.id)}
+              testID={`coach-note-${note.id}`}
+            />
+          ))}
 
           {/* GENESIS Card */}
           <Pressable onPress={() => router.push('/(tabs)/chat')}>
@@ -435,50 +475,21 @@ const styles = StyleSheet.create({
     minWidth: '47%',
   },
 
-  // Coach Card
-  coachCard: {
-    borderColor: 'rgba(0, 245, 170, 0.25)',
-  },
-  coachHeader: {
-    flexDirection: 'row',
+  // Rest Day
+  restDayContent: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
   },
-  coachBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    backgroundColor: 'rgba(0, 245, 170, 0.15)',
-    borderRadius: 100,
-  },
-  coachBadgeText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.mint,
-    letterSpacing: 1.5,
-  },
-  coachTitle: {
-    fontSize: typography.fontSize.lg,
+  restDayTitle: {
+    fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
     marginBottom: spacing.xs,
   },
-  coachMessage: {
+  restDaySubtitle: {
     fontSize: typography.fontSize.base,
     color: colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: spacing.md,
-  },
-  coachCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    alignSelf: 'flex-start',
-  },
-  coachCtaText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.mint,
   },
 
   // GENESIS Card

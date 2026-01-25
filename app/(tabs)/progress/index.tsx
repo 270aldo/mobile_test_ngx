@@ -11,40 +11,54 @@ import {
   Camera,
   Trophy,
 } from 'lucide-react-native';
-import { GlassCard, StatusPill, ProgressRing, StatCard } from '@/components/ui';
+import { GlassCard, StatusPill, ProgressRing, StatCard, CoachNoteCard } from '@/components/ui';
 import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
+import { useProfile } from '@/stores/profile';
+import { useActiveSeason, useWeekWorkouts } from '@/stores/season';
+import { useWorkoutStreak, useBadges } from '@/stores/progress';
+import { useCoachNotesByLocation, useCoachNotes } from '@/hooks/useCoachNotes';
+import { useRouter } from 'expo-router';
 
-// Mock stats
-const stats = {
-  currentWeight: 82.5,
-  weightChange: -1.2,
-  bodyFat: 18.5,
-  bodyFatChange: -0.8,
-  totalVolume: 24680,
-  volumeChange: 12,
-  weeklyWorkouts: 3,
-  weeklyGoal: 4,
-};
-
-const weeklyProgress = [
-  { day: 'L', completed: true, volume: 4200 },
-  { day: 'M', completed: true, volume: 3800 },
-  { day: 'X', completed: true, volume: 4500 },
-  { day: 'J', completed: false, volume: 0 },
-  { day: 'V', completed: false, volume: 0 },
-  { day: 'S', completed: false, volume: 0 },
-  { day: 'D', completed: false, volume: 0 },
-];
-
-const recentActivity = [
-  { id: '1', title: 'Peso registrado: 82.5 kg', time: 'Hoy, 8:30 AM', type: 'weight' },
-  { id: '2', title: 'Upper Body completado', time: 'Ayer, 7:15 PM', type: 'workout' },
-  { id: '3', title: 'PR en Bench Press: 85 kg', time: 'Hace 2 días', type: 'pr' },
-];
+// Days of week mapping
+const DAYS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
 export default function ProgressScreen() {
-  const maxVolume = Math.max(...weeklyProgress.map(d => d.volume), 1);
-  const weekProgress = (stats.weeklyWorkouts / stats.weeklyGoal) * 100;
+  const router = useRouter();
+  const profile = useProfile();
+  const activeSeason = useActiveSeason();
+  const weekWorkouts = useWeekWorkouts();
+  const workoutStreak = useWorkoutStreak();
+  const badges = useBadges();
+  const progressNotes = useCoachNotesByLocation('progress');
+  const { dismiss: dismissNote } = useCoachNotes();
+
+  // Calculate stats from real data
+  const currentWeight = profile?.weight_kg ?? 0;
+  const bodyFat = profile?.body_fat_percentage ?? 0;
+  const weeklyGoal = profile?.training_days_per_week ?? 4;
+
+  // Calculate weekly progress
+  const completedWorkouts = weekWorkouts?.filter(w => w.status === 'completed').length ?? 0;
+  const weekProgress = weeklyGoal > 0 ? (completedWorkouts / weeklyGoal) * 100 : 0;
+
+  // Map week workouts to days
+  const weeklyProgress = DAYS.map((day, index) => {
+    const workout = weekWorkouts?.find(w => w.day_of_week === index);
+    return {
+      day,
+      completed: workout?.status === 'completed',
+      volume: 0, // Would need workout logs for actual volume
+    };
+  });
+
+  const maxVolume = 1; // Placeholder
+
+  // PR count from badges
+  const prCount = badges?.filter(b => b.badge_type === 'pr').length ?? 0;
+
+  // Season display
+  const seasonNumber = activeSeason?.number ?? 1;
+  const weekNumber = activeSeason?.current_week ?? 1;
 
   return (
     <View style={styles.container}>
@@ -71,7 +85,7 @@ export default function ProgressScreen() {
             <Text style={styles.headerTitle}>Tu Progreso</Text>
           </View>
           <View style={styles.seasonBadge}>
-            <Text style={styles.seasonText}>S2 • W3</Text>
+            <Text style={styles.seasonText}>S{seasonNumber} • W{weekNumber}</Text>
           </View>
         </View>
 
@@ -81,15 +95,17 @@ export default function ProgressScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Week Summary Card */}
-          <GlassCard variant="mint" style={styles.weekCard}>
+          <GlassCard variant="mint" style={styles.weekCard} backgroundImage={require('@/assets/ngx_wearable.png')}>
             <View style={styles.weekContent}>
               <View style={styles.weekInfo}>
                 <Text style={styles.weekLabel}>ESTA SEMANA</Text>
                 <Text style={styles.weekTitle}>
-                  {stats.weeklyWorkouts} de {stats.weeklyGoal} sesiones
+                  {completedWorkouts} de {weeklyGoal} sesiones
                 </Text>
                 <Text style={styles.weekSubtitle}>
-                  {stats.weeklyGoal - stats.weeklyWorkouts} restantes para tu meta
+                  {weeklyGoal - completedWorkouts > 0
+                    ? `${weeklyGoal - completedWorkouts} restantes para tu meta`
+                    : 'Meta semanal completada'}
                 </Text>
               </View>
               <ProgressRing
@@ -97,8 +113,8 @@ export default function ProgressScreen() {
                 size={80}
                 strokeWidth={6}
                 color="mint"
-                value={`${stats.weeklyWorkouts}`}
-                sublabel={`/${stats.weeklyGoal}`}
+                value={`${completedWorkouts}`}
+                sublabel={`/${weeklyGoal}`}
               />
             </View>
 
@@ -129,7 +145,7 @@ export default function ProgressScreen() {
             <StatCard
               icon={Scale}
               label="Peso"
-              value={`${stats.currentWeight}`}
+              value={currentWeight > 0 ? `${currentWeight}` : '--'}
               sublabel="kg"
               progress={100}
               color="primary"
@@ -138,27 +154,27 @@ export default function ProgressScreen() {
             <StatCard
               icon={Activity}
               label="Body Fat"
-              value={`${stats.bodyFat}%`}
-              sublabel={`${stats.bodyFatChange > 0 ? '+' : ''}${stats.bodyFatChange}%`}
+              value={bodyFat > 0 ? `${bodyFat}%` : '--'}
+              sublabel="actual"
               progress={75}
               color="mint"
               style={styles.statCard}
             />
             <StatCard
               icon={Dumbbell}
-              label="Volumen"
-              value={`${(stats.totalVolume / 1000).toFixed(1)}k`}
-              sublabel="kg total"
-              progress={85}
+              label="Racha"
+              value={`${workoutStreak?.current_count ?? 0}`}
+              sublabel="días"
+              progress={(workoutStreak?.current_count ?? 0) * 10}
               color="warning"
               style={styles.statCard}
             />
             <StatCard
               icon={Trophy}
               label="PRs"
-              value="3"
-              sublabel="este mes"
-              progress={60}
+              value={`${prCount}`}
+              sublabel="logrados"
+              progress={prCount * 20}
               color="chrome"
               style={styles.statCard}
             />
@@ -167,10 +183,10 @@ export default function ProgressScreen() {
           {/* Volume Chart */}
           <GlassCard style={styles.chartCard}>
             <View style={styles.chartHeader}>
-              <Text style={styles.chartTitle}>Volumen Semanal</Text>
+              <Text style={styles.chartTitle}>Sesiones de la Semana</Text>
               <View style={styles.chartTrend}>
                 <TrendingUp size={14} color={colors.mint} />
-                <Text style={styles.chartTrendText}>+{stats.volumeChange}%</Text>
+                <Text style={styles.chartTrendText}>{completedWorkouts}/{weeklyGoal}</Text>
               </View>
             </View>
 
@@ -223,35 +239,58 @@ export default function ProgressScreen() {
             </Pressable>
           </View>
 
-          {/* Recent Activity */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Actividad reciente</Text>
-            <Pressable style={styles.viewAllButton}>
-              <Text style={styles.viewAllText}>Ver todo</Text>
-              <ChevronRight size={14} color={colors.textMuted} />
-            </Pressable>
-          </View>
+          {/* Coach Notes */}
+          {progressNotes.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Notas del Coach</Text>
+              {progressNotes.map((note) => (
+                <CoachNoteCard
+                  key={note.id}
+                  title={note.title}
+                  content={note.content}
+                  priority={(note.priority as 'info' | 'action' | 'celebration') ?? 'info'}
+                  ctaText={note.cta_text ?? undefined}
+                  onCtaPress={note.cta_action ? () => router.push(note.cta_action as any) : undefined}
+                  onDismiss={() => dismissNote(note.id)}
+                  testID={`coach-note-${note.id}`}
+                />
+              ))}
+            </>
+          )}
 
-          <GlassCard style={styles.activityCard} padding="none">
-            {recentActivity.map((item, index) => (
-              <View key={item.id}>
-                <View style={styles.activityItem}>
-                  <View style={[
-                    styles.activityDot,
-                    item.type === 'pr' && styles.activityDotPr,
-                  ]} />
-                  <View style={styles.activityContent}>
-                    <Text style={styles.activityTitle}>{item.title}</Text>
-                    <Text style={styles.activityTime}>{item.time}</Text>
-                  </View>
-                  <ChevronRight size={16} color={colors.textMuted} />
-                </View>
-                {index < recentActivity.length - 1 && (
-                  <View style={styles.activityDivider} />
-                )}
+          {/* Badges Section */}
+          {badges && badges.length > 0 && (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Logros recientes</Text>
+                <Pressable style={styles.viewAllButton}>
+                  <Text style={styles.viewAllText}>Ver todo</Text>
+                  <ChevronRight size={14} color={colors.textMuted} />
+                </Pressable>
               </View>
-            ))}
-          </GlassCard>
+
+              <GlassCard style={styles.activityCard} padding="none">
+                {badges.slice(0, 3).map((badge, index) => (
+                  <View key={badge.id}>
+                    <View style={styles.activityItem}>
+                      <View style={[
+                        styles.activityDot,
+                        badge.badge_type === 'pr' && styles.activityDotPr,
+                      ]} />
+                      <View style={styles.activityContent}>
+                        <Text style={styles.activityTitle}>{badge.title}</Text>
+                        <Text style={styles.activityTime}>{badge.description}</Text>
+                      </View>
+                      <Trophy size={16} color={colors.warning} />
+                    </View>
+                    {index < Math.min(badges.length, 3) - 1 && (
+                      <View style={styles.activityDivider} />
+                    )}
+                  </View>
+                ))}
+              </GlassCard>
+            </>
+          )}
         </ScrollView>
       </SafeAreaView>
     </View>

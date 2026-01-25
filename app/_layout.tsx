@@ -15,10 +15,15 @@ export default function RootLayout() {
   useEffect(() => {
     hydrate().finally(() => {
       SplashScreen.hideAsync();
+    }).catch(() => {
+      SplashScreen.hideAsync();
     });
   }, [hydrate]);
 
-  if (!isHydrated) {
+  // DEV BYPASS: Skip hydration check to test UI
+  const skipHydration = true;
+
+  if (!isHydrated && !skipHydration) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -36,20 +41,15 @@ export default function RootLayout() {
 }
 
 function RootNavigator() {
-  // ┌─────────────────────────────────────────────────────────────┐
-  // │  DEV MODE: Auth bypass enabled for UI development          │
-  // │  To enable real auth, uncomment the block below and        │
-  // │  comment out the DEV MODE block                            │
-  // └─────────────────────────────────────────────────────────────┘
+  // DEV BYPASS: Force show tabs for testing
+  const devBypass = true;
 
-  // PRODUCTION AUTH (uncomment when ready):
-  // const isLoggedIn = useIsAuthenticated();
-  // const user = useAuthStore((s) => s.user);
-  // const needsOnboarding = !!user && !user.user_metadata?.onboarding_completed;
+  // Real authentication flow
+  const isLoggedIn = devBypass || useIsAuthenticated();
+  const user = useAuthStore((s) => s.user);
 
-  // DEV MODE: Skip auth for design work
-  const isLoggedIn = true;
-  const needsOnboarding = false;
+  // Check if user needs onboarding (profile not completed)
+  const needsOnboarding = !devBypass && !!user && !user.user_metadata?.onboarding_completed;
 
   return (
     <Stack

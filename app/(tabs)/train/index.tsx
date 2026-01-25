@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -13,58 +14,99 @@ import {
   ChevronRight,
   Zap,
 } from 'lucide-react-native';
-import { GlassCard, Button, StatusPill, ProgressRing } from '@/components/ui';
+import { GlassCard, Button, StatusPill, ProgressRing, EmptyState } from '@/components/ui';
 import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
-
-// Mock exercise data
-const exercises = [
-  {
-    id: '1',
-    name: 'Bench Press',
-    sets: '4 x 8-10',
-    weight: '80kg',
-    rpe: '7-8',
-    completed: true,
-  },
-  {
-    id: '2',
-    name: 'Overhead Press',
-    sets: '3 x 10-12',
-    weight: '45kg',
-    rpe: '7',
-    completed: true,
-  },
-  {
-    id: '3',
-    name: 'Incline DB Press',
-    sets: '3 x 12',
-    weight: '30kg',
-    rpe: '8',
-    completed: false,
-    current: true,
-  },
-  {
-    id: '4',
-    name: 'Cable Flyes',
-    sets: '3 x 15',
-    weight: '15kg',
-    rpe: '8',
-    completed: false,
-  },
-  {
-    id: '5',
-    name: 'Tricep Pushdowns',
-    sets: '3 x 12-15',
-    weight: '25kg',
-    rpe: '7',
-    completed: false,
-  },
-];
+import { useTodayWorkout, useSeasonLoading } from '@/stores/season';
+import { useWorkoutStore, useCurrentWorkout, useExerciseBlocks, useWorkoutInProgress } from '@/stores/workout';
+import { useUser } from '@/stores/auth';
+import type { ExerciseBlock } from '@/types';
 
 export default function TrainScreen() {
   const router = useRouter();
-  const completedCount = exercises.filter((e) => e.completed).length;
-  const progress = (completedCount / exercises.length) * 100;
+  const user = useUser();
+  const todayWorkout = useTodayWorkout();
+  const isLoading = useSeasonLoading();
+  const currentWorkout = useCurrentWorkout();
+  const exerciseBlocks = useExerciseBlocks();
+  const isWorkoutInProgress = useWorkoutInProgress();
+  const startWorkout = useWorkoutStore((s) => s.startWorkout);
+  const completeWorkout = useWorkoutStore((s) => s.completeWorkout);
+
+  // Timer state
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Timer effect
+  useEffect(() => {
+    if (!isWorkoutInProgress || isPaused) return;
+
+    const interval = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isWorkoutInProgress, isPaused]);
+
+  // Format timer display
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Use real exercise blocks or fallback to todayWorkout blocks
+  const exercises = exerciseBlocks.length > 0
+    ? exerciseBlocks
+    : todayWorkout?.exercise_blocks ?? [];
+
+  // Track completed exercises (for now, mock status based on order)
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const completedCount = completedIds.size;
+  const progress = exercises.length > 0 ? (completedCount / exercises.length) * 100 : 0;
+
+  // Start workout handler
+  const handleStartWorkout = useCallback(async () => {
+    if (!user?.id || !todayWorkout?.id) return;
+    await startWorkout(user.id, todayWorkout.id);
+  }, [user?.id, todayWorkout?.id, startWorkout]);
+
+  // Complete set handler
+  const handleCompleteExercise = useCallback((exerciseId: string) => {
+    setCompletedIds((prev) => new Set([...prev, exerciseId]));
+    setCurrentIndex((prev) => Math.min(prev + 1, exercises.length - 1));
+  }, [exercises.length]);
+
+  // If loading or no workout
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.ngx} />
+      </View>
+    );
+  }
+
+  if (!todayWorkout) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#0A0A0F', '#0D0B14', '#050505']}
+          locations={[0, 0.4, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+        <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', padding: spacing.xl }]}>
+          <EmptyState
+            type="workouts"
+            title="No hay entrenamiento hoy"
+            message="Descansa hoy y vuelve mañana más fuerte"
+          />
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  const currentExercise = exercises[currentIndex];
 
   return (
     <View style={styles.container}>
@@ -105,13 +147,13 @@ export default function TrainScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Hero Timer Card */}
-          <GlassCard variant="hero" style={styles.timerCard}>
+          <GlassCard variant="hero" style={styles.timerCard} backgroundImage={require('@/assets/ngx_pullup.png')}>
             <View style={styles.timerContent}>
               {/* Timer Display */}
               <View style={styles.timerMain}>
                 <Text style={styles.timerLabel}>TIEMPO</Text>
-                <Text style={styles.timerValue}>24:35</Text>
-                <Text style={styles.workoutName}>Upper Body // Push</Text>
+                <Text style={styles.timerValue}>{formatTime(elapsedSeconds)}</Text>
+                <Text style={styles.workoutName}>{todayWorkout.title} // {todayWorkout.type || 'Fuerza'}</Text>
               </View>
 
               {/* Progress Ring */}
@@ -151,54 +193,60 @@ export default function TrainScreen() {
             <Text style={styles.sectionTitle}>Ejercicio Actual</Text>
           </View>
 
-          {exercises
-            .filter((e) => e.current)
-            .map((exercise) => (
-              <GlassCard key={exercise.id} variant="elevated" style={styles.currentExercise}>
-                <View style={styles.exerciseHeader}>
-                  <View style={styles.exerciseNumber}>
-                    <Text style={styles.exerciseNumberText}>3</Text>
-                  </View>
-                  <View style={styles.exerciseInfo}>
-                    <Text style={styles.currentExerciseName}>{exercise.name}</Text>
-                    <Text style={styles.exercisePrescription}>
-                      {exercise.sets} @ {exercise.weight} • RPE {exercise.rpe}
-                    </Text>
-                  </View>
-                  <StatusPill>Set 2/3</StatusPill>
+          {currentExercise && (
+            <GlassCard key={currentExercise.id} variant="elevated" style={styles.currentExercise}>
+              <View style={styles.exerciseHeader}>
+                <View style={styles.exerciseNumber}>
+                  <Text style={styles.exerciseNumberText}>{currentIndex + 1}</Text>
                 </View>
-
-                {/* Set Progress */}
-                <View style={styles.setProgress}>
-                  {[1, 2, 3].map((set) => (
-                    <View
-                      key={set}
-                      style={[
-                        styles.setDot,
-                        set === 1 && styles.setDotComplete,
-                        set === 2 && styles.setDotCurrent,
-                      ]}
-                    >
-                      {set === 1 && <CheckCircle2 size={14} color={colors.void} />}
-                      {set === 2 && <Text style={styles.setDotText}>2</Text>}
-                      {set === 3 && <Text style={styles.setDotTextInactive}>3</Text>}
-                    </View>
-                  ))}
+                <View style={styles.exerciseInfo}>
+                  <Text style={styles.currentExerciseName}>{currentExercise.exercise_name}</Text>
+                  <Text style={styles.exercisePrescription}>
+                    {currentExercise.sets || 3} x {currentExercise.reps || '8-12'} @ {currentExercise.weight_prescription || 'RPE 7-8'}
+                  </Text>
                 </View>
+                <StatusPill>{`Set 1/${currentExercise.sets || 3}`}</StatusPill>
+              </View>
 
-                {/* Action Buttons */}
-                <View style={styles.exerciseActions}>
-                  <Button variant="secondary" onPress={() => {}} style={styles.actionBtn}>
+              {/* Set Progress */}
+              <View style={styles.setProgress}>
+                {Array.from({ length: currentExercise.sets || 3 }, (_, i) => i + 1).map((set: number) => (
+                  <View
+                    key={set}
+                    style={[
+                      styles.setDot,
+                      set < 1 && styles.setDotComplete,
+                      set === 1 && styles.setDotCurrent,
+                    ]}
+                  >
+                    {set < 1 && <CheckCircle2 size={14} color={colors.void} />}
+                    {set === 1 && <Text style={styles.setDotText}>{set}</Text>}
+                    {set > 1 && <Text style={styles.setDotTextInactive}>{set}</Text>}
+                  </View>
+                ))}
+              </View>
+
+              {/* Action Buttons */}
+              <View style={styles.exerciseActions}>
+                <Button variant="secondary" onPress={() => setIsPaused(!isPaused)} style={styles.actionBtn}>
+                  {isPaused ? (
+                    <Play size={16} color={colors.text} style={{ marginRight: 6 }} />
+                  ) : (
                     <Pause size={16} color={colors.text} style={{ marginRight: 6 }} />
-                    Pausar
-                  </Button>
-                  <Button variant="primary" onPress={() => {}} style={styles.actionBtn}>
-                    <CheckCircle2 size={16} color={colors.text} style={{ marginRight: 6 }} />
-                    Completar Set
-                  </Button>
-                </View>
-              </GlassCard>
-            ))}
+                  )}
+                  {isPaused ? 'Reanudar' : 'Pausar'}
+                </Button>
+                <Button
+                  variant="primary"
+                  onPress={() => handleCompleteExercise(currentExercise.id)}
+                  style={styles.actionBtn}
+                >
+                  <CheckCircle2 size={16} color={colors.text} style={{ marginRight: 6 }} />
+                  Completar
+                </Button>
+              </View>
+            </GlassCard>
+          )}
 
           {/* Exercise List */}
           <View style={styles.sectionHeader}>
@@ -206,54 +254,59 @@ export default function TrainScreen() {
             <Text style={styles.sectionSubtitle}>{completedCount}/{exercises.length} completados</Text>
           </View>
 
-          {exercises.map((exercise, index) => (
-            <Pressable key={exercise.id}>
-              <GlassCard
-                style={[
-                  styles.exerciseCard,
-                  exercise.current && styles.exerciseCardCurrent,
-                ]}
-                padding="md"
-              >
-                <View style={styles.exerciseRow}>
-                  {/* Status */}
-                  <View style={[
-                    styles.exerciseStatus,
-                    exercise.completed && styles.exerciseStatusComplete,
-                    exercise.current && styles.exerciseStatusCurrent,
-                  ]}>
-                    {exercise.completed ? (
-                      <CheckCircle2 size={18} color={colors.void} />
-                    ) : exercise.current ? (
-                      <Play size={14} color={colors.void} fill={colors.void} />
+          {exercises.map((exercise, index) => {
+            const isCompleted = completedIds.has(exercise.id);
+            const isCurrent = index === currentIndex;
+
+            return (
+              <Pressable key={exercise.id} onPress={() => setCurrentIndex(index)}>
+                <GlassCard
+                  style={[
+                    styles.exerciseCard,
+                    isCurrent && styles.exerciseCardCurrent,
+                  ]}
+                  padding="md"
+                >
+                  <View style={styles.exerciseRow}>
+                    {/* Status */}
+                    <View style={[
+                      styles.exerciseStatus,
+                      isCompleted && styles.exerciseStatusComplete,
+                      isCurrent && styles.exerciseStatusCurrent,
+                    ]}>
+                      {isCompleted ? (
+                        <CheckCircle2 size={18} color={colors.void} />
+                      ) : isCurrent ? (
+                        <Play size={14} color={colors.void} fill={colors.void} />
+                      ) : (
+                        <Text style={styles.exerciseIndex}>{index + 1}</Text>
+                      )}
+                    </View>
+
+                    {/* Info */}
+                    <View style={styles.exerciseDetails}>
+                      <Text style={[
+                        styles.exerciseName,
+                        isCompleted && styles.exerciseNameComplete,
+                      ]}>
+                        {exercise.exercise_name}
+                      </Text>
+                      <Text style={styles.exerciseMeta}>
+                        {exercise.sets || 3} x {exercise.reps || '8-12'} @ {exercise.weight_prescription || 'RPE 7-8'}
+                      </Text>
+                    </View>
+
+                    {/* Right */}
+                    {isCurrent ? (
+                      <StatusPill>En curso</StatusPill>
                     ) : (
-                      <Text style={styles.exerciseIndex}>{index + 1}</Text>
+                      <ChevronRight size={18} color={colors.textMuted} />
                     )}
                   </View>
-
-                  {/* Info */}
-                  <View style={styles.exerciseDetails}>
-                    <Text style={[
-                      styles.exerciseName,
-                      exercise.completed && styles.exerciseNameComplete,
-                    ]}>
-                      {exercise.name}
-                    </Text>
-                    <Text style={styles.exerciseMeta}>
-                      {exercise.sets} @ {exercise.weight}
-                    </Text>
-                  </View>
-
-                  {/* Right */}
-                  {exercise.current ? (
-                    <StatusPill>En curso</StatusPill>
-                  ) : (
-                    <ChevronRight size={18} color={colors.textMuted} />
-                  )}
-                </View>
-              </GlassCard>
-            </Pressable>
-          ))}
+                </GlassCard>
+              </Pressable>
+            );
+          })}
 
           {/* Finish Button */}
           <Button

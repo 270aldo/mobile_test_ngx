@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,37 +21,11 @@ import {
   Heart,
   ChevronRight,
 } from 'lucide-react-native';
-import { GlassCard, Label, PulseDot } from '@/components/ui';
+import { GlassCard, Label, PulseDot, EmptyState } from '@/components/ui';
 import { colors, spacing, typography, layout, borderRadius, touchTarget, avatarSizes } from '@/constants/theme';
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'genesis';
-  content: string;
-  timestamp: string;
-}
-
-// Mock messages
-const initialMessages: ChatMessage[] = [
-  {
-    id: '1',
-    role: 'genesis',
-    content: 'Hola! Soy GENESIS, tu sistema de entrenamiento inteligente. Puedo ayudarte con tu programa, nutrición, recovery y cualquier duda sobre tu progreso. ¿En qué puedo ayudarte hoy?',
-    timestamp: '10:30',
-  },
-  {
-    id: '2',
-    role: 'user',
-    content: 'Quiero saber si debo subir el peso en bench press',
-    timestamp: '10:32',
-  },
-  {
-    id: '3',
-    role: 'genesis',
-    content: 'Analizando tus últimas 4 sesiones de Upper Body Push...\n\nHas completado 4x10 con 80kg consistentemente con RPE 7-8. Según tu progresión lineal, estás listo para subir.\n\n**Recomendación:** Incrementa a 82.5kg para la siguiente sesión. Mantén el mismo esquema de sets y reps.\n\n¿Quieres que actualice tu programa?',
-    timestamp: '10:32',
-  },
-];
+import { useUser } from '@/stores/auth';
+import { useChatStore, useMessages, useChatLoading } from '@/stores/chat';
+import { useProfile } from '@/stores/profile';
 
 const quickActions = [
   { id: 'workout', icon: Dumbbell, label: 'Mi workout', prompt: 'Cuéntame sobre mi workout de hoy' },
@@ -59,34 +34,35 @@ const quickActions = [
 ];
 
 export default function ChatScreen() {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const user = useUser();
+  const profile = useProfile();
+  const messages = useMessages();
+  const isLoading = useChatLoading();
+  const sendMessage = useChatStore((s) => s.sendMessage);
+
   const [inputText, setInputText] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
+  // Get user initials for avatar
+  const userInitials = profile?.full_name
+    ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
 
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputText,
-      timestamp: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
-    };
+  // Format timestamp
+  const formatTime = (dateString: string | null) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  };
 
-    setMessages((prev) => [...prev, userMessage]);
+  const handleSend = useCallback(async () => {
+    if (!inputText.trim() || !user?.id) return;
+
+    const content = inputText.trim();
     setInputText('');
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'genesis',
-        content: 'Entendido. Analizando tu pregunta y buscando la mejor respuesta basada en tus datos de entrenamiento...',
-        timestamp: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-    }, 1000);
-  };
+    await sendMessage(user.id, content);
+  }, [inputText, user?.id, sendMessage]);
 
   const handleQuickAction = (prompt: string) => {
     setInputText(prompt);
@@ -145,37 +121,66 @@ export default function ChatScreen() {
             showsVerticalScrollIndicator={false}
             onContentSizeChange={() => scrollViewRef.current?.scrollToEnd()}
           >
-            {messages.map((message) => (
-              <View
-                key={message.id}
-                style={[
-                  styles.messageRow,
-                  message.role === 'user' && styles.messageRowUser,
-                ]}
-              >
-                {message.role === 'genesis' && (
-                  <View style={styles.genesisAvatar}>
-                    <Sparkles size={14} color={colors.ngx} />
-                  </View>
-                )}
-
-                <View
-                  style={[
-                    styles.messageBubble,
-                    message.role === 'user' && styles.messageBubbleUser,
-                  ]}
-                >
-                  <Text style={styles.messageText}>{message.content}</Text>
-                  <Text style={styles.messageTime}>{message.timestamp}</Text>
-                </View>
-
-                {message.role === 'user' && (
-                  <View style={styles.userAvatar}>
-                    <Text style={styles.userAvatarText}>T</Text>
-                  </View>
-                )}
+            {messages.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <EmptyState
+                  type="messages"
+                  title="Comienza una conversación"
+                  message="Pregunta algo a GENESIS sobre tu entrenamiento"
+                />
               </View>
-            ))}
+            ) : (
+              messages.map((message) => {
+                const isUser = message.role === 'user';
+                const isGenesis = message.role === 'genesis';
+                const isCoach = message.role === 'coach';
+
+                return (
+                  <View
+                    key={message.id}
+                    style={[
+                      styles.messageRow,
+                      isUser && styles.messageRowUser,
+                    ]}
+                  >
+                    {(isGenesis || isCoach) && (
+                      <View style={[styles.genesisAvatar, isCoach && styles.coachAvatar]}>
+                        <Sparkles size={14} color={isCoach ? colors.mint : colors.ngx} />
+                      </View>
+                    )}
+
+                    <View
+                      style={[
+                        styles.messageBubble,
+                        isUser && styles.messageBubbleUser,
+                        isCoach && styles.messageBubbleCoach,
+                      ]}
+                    >
+                      <Text style={styles.messageText}>{message.content}</Text>
+                      <Text style={styles.messageTime}>{formatTime(message.created_at)}</Text>
+                    </View>
+
+                    {isUser && (
+                      <View style={styles.userAvatar}>
+                        <Text style={styles.userAvatarText}>{userInitials}</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })
+            )}
+
+            {/* Loading indicator when sending */}
+            {isLoading && (
+              <View style={styles.messageRow}>
+                <View style={styles.genesisAvatar}>
+                  <Sparkles size={14} color={colors.ngx} />
+                </View>
+                <View style={styles.typingBubble}>
+                  <ActivityIndicator size="small" color={colors.ngx} />
+                </View>
+              </View>
+            )}
           </ScrollView>
 
           {/* Input Area */}
@@ -416,5 +421,52 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.sm,
+  },
+
+  // Empty state container
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+  },
+
+  // Coach styles
+  coachAvatar: {
+    backgroundColor: 'rgba(0, 245, 170, 0.2)',
+    borderColor: 'rgba(0, 245, 170, 0.3)',
+  },
+  messageBubbleCoach: {
+    backgroundColor: 'rgba(0, 245, 170, 0.1)',
+    borderColor: 'rgba(0, 245, 170, 0.2)',
+  },
+
+  // Typing indicator
+  typingBubble: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  typingDots: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  typingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.textMuted,
+  },
+  typingDot1: {
+    opacity: 0.4,
+  },
+  typingDot2: {
+    opacity: 0.6,
+  },
+  typingDot3: {
+    opacity: 0.8,
   },
 });
