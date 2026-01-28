@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=390, height=844, initial-scale=1.0">
+    <title>GENESIS - Train Screen Prototype</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ngx-violet: #6D00FF;
+            --ngx-violet-light: #8B33FF;
+            --ngx-violet-glow: rgba(109, 0, 255, 0.4);
+            --ngx-mint: #00F5AA;
+            --bg-void: #050505;
+            --bg-surface: #0a0a0b;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(109, 0, 255, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-void);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* iPhone Frame */
+        .phone-frame {
+            width: 390px;
+            height: 844px;
+            background: var(--bg-void);
+            border-radius: 50px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                0 25px 50px -12px rgba(0, 0, 0, 0.8),
+                0 0 100px -20px var(--ngx-violet-glow);
+        }
+
+        /* Dynamic Island */
+        .dynamic-island {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 126px;
+            height: 37px;
+            background: #000;
+            border-radius: 20px;
+            z-index: 100;
+        }
+
+        /* Screen Content */
+        .screen {
+            width: 100%;
+            height: 100%;
+            padding: 60px 20px 100px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Ambient Glow */
+        .ambient-glow {
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, var(--ngx-violet-glow) 0%, transparent 70%);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ambient-glow-bottom {
+            position: absolute;
+            bottom: 50px;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0, 245, 170, 0.15) 0%, transparent 70%);
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Grid Overlay */
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+            mask-image: radial-gradient(circle at 50% 30%, black 20%, transparent 80%);
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 20%;
+            right: 20%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(109, 0, 255, 0.5), transparent);
+        }
+
+        .glass-card-elevated {
+            border-color: var(--border-accent);
+            box-shadow:
+                0 0 40px -10px var(--ngx-violet-glow),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        /* Hero Timer Card */
+        .hero-card {
+            background:
+                linear-gradient(135deg, rgba(109, 0, 255, 0.15) 0%, transparent 50%),
+                rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(109, 0, 255, 0.3);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--ngx-violet), transparent);
+        }
+
+        .hero-card::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+            pointer-events: none;
+        }
+
+        /* Progress Ring */
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-bg {
+            stroke: rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-ring-fill {
+            stroke: var(--ngx-violet);
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 8px var(--ngx-violet-glow));
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--ngx-violet) 0%, #5500CC 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 14px 24px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px var(--ngx-violet-glow);
+            transform: translateY(-2px);
+        }
+
+        /* Shimmer effect */
+        .btn-primary::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2.5s infinite;
+        }
+
+        @keyframes shimmer {
+            100% { left: 100%; }
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 24px;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(109, 0, 255, 0.3);
+        }
+
+        /* Status Pill */
+        .status-pill {
+            background: rgba(109, 0, 255, 0.15);
+            border: 1px solid rgba(109, 0, 255, 0.4);
+            border-radius: 100px;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--ngx-violet-light);
+            letter-spacing: 0.5px;
+        }
+
+        /* Live Badge */
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.15);
+            border-radius: 100px;
+            padding: 4px 10px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #EF4444;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* Set Dots */
+        .set-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .set-dot-pending {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .set-dot-current {
+            background: var(--ngx-violet);
+            color: white;
+            box-shadow: 0 0 20px var(--ngx-violet-glow);
+        }
+
+        .set-dot-complete {
+            background: var(--ngx-mint);
+            color: #050505;
+        }
+
+        /* Exercise Card */
+        .exercise-card {
+            transition: all 0.3s ease;
+        }
+
+        .exercise-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(109, 0, 255, 0.3);
+        }
+
+        .exercise-card.active {
+            border-color: var(--border-accent);
+            box-shadow: 0 0 30px -10px var(--ngx-violet-glow);
+        }
+
+        /* Tab Bar */
+        .tab-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 65px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 20px;
+        }
+
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .tab-item.active {
+            color: var(--ngx-violet);
+            filter: drop-shadow(0 0 8px var(--ngx-violet-glow));
+        }
+
+        /* Stat Item */
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Icon Containers */
+        .icon-container {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-violet {
+            background: rgba(109, 0, 255, 0.15);
+            border: 1px solid rgba(109, 0, 255, 0.3);
+        }
+
+        .icon-mint {
+            background: rgba(0, 245, 170, 0.15);
+            border: 1px solid rgba(0, 245, 170, 0.3);
+        }
+
+        .icon-warning {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="dynamic-island"></div>
+
+        <!-- Ambient Effects -->
+        <div class="ambient-glow"></div>
+        <div class="ambient-glow-bottom"></div>
+        <div class="grid-overlay"></div>
+
+        <div class="screen">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6 relative z-10">
+                <button class="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                    <i data-lucide="chevron-left" class="w-5 h-5 text-white"></i>
+                </button>
+
+                <div class="text-center">
+                    <p class="text-xs font-semibold tracking-[0.15em] text-white/70">ACTIVE OPS</p>
+                    <div class="live-badge mt-1">
+                        <div class="live-dot"></div>
+                        <span class="text-[10px] font-bold tracking-wider text-red-400">EN VIVO</span>
+                    </div>
+                </div>
+
+                <div class="w-11"></div>
+            </div>
+
+            <!-- Hero Timer Card -->
+            <div class="hero-card p-5 mb-5 relative z-10">
+                <div class="flex justify-between items-center mb-5">
+                    <div>
+                        <p class="text-[10px] font-medium tracking-[0.2em] text-white/50 mb-1">TIEMPO</p>
+                        <p class="text-5xl font-bold font-mono text-white tracking-tight">12:34</p>
+                        <p class="text-sm text-white/60 mt-1">Push Day A // Fuerza</p>
+                    </div>
+
+                    <!-- Progress Ring -->
+                    <div class="relative">
+                        <svg class="progress-ring w-24 h-24">
+                            <circle class="progress-ring-bg" cx="48" cy="48" r="40" fill="none" stroke-width="6"/>
+                            <circle class="progress-ring-fill" cx="48" cy="48" r="40" fill="none" stroke-width="6"
+                                stroke-dasharray="251.2" stroke-dashoffset="62.8"/>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-xl font-bold text-white">3/4</span>
+                            <span class="text-[10px] text-white/50">ejercicios</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="flex justify-around pt-4 border-t border-white/10 relative z-10">
+                    <div class="stat-item">
+                        <div class="icon-container icon-warning">
+                            <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
+                        </div>
+                        <span class="text-lg font-bold text-white font-mono">186</span>
+                        <span class="text-[10px] text-white/40">kcal</span>
+                    </div>
+                    <div class="w-px h-12 bg-white/10"></div>
+                    <div class="stat-item">
+                        <div class="icon-container icon-mint">
+                            <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i>
+                        </div>
+                        <span class="text-lg font-bold text-white font-mono">2.4k</span>
+                        <span class="text-[10px] text-white/40">kg vol</span>
+                    </div>
+                    <div class="w-px h-12 bg-white/10"></div>
+                    <div class="stat-item">
+                        <div class="icon-container icon-violet">
+                            <i data-lucide="timer" class="w-4 h-4 text-violet-400"></i>
+                        </div>
+                        <span class="text-lg font-bold text-white font-mono">4</span>
+                        <span class="text-[10px] text-white/40">sets left</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Label -->
+            <div class="flex items-center justify-between mb-3 relative z-10">
+                <p class="text-xs font-medium tracking-[0.15em] text-white/40 uppercase">Ejercicio Actual</p>
+            </div>
+
+            <!-- Current Exercise Card -->
+            <div class="glass-card glass-card-elevated p-5 mb-5 relative z-10">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-10 h-10 rounded-full bg-[#6D00FF] flex items-center justify-center text-white font-bold">
+                        3
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-lg font-semibold text-white font-display">Bench Press</p>
+                        <p class="text-sm text-white/50">4 x 8-10 @ RPE 8</p>
+                    </div>
+                    <div class="status-pill">Set 2/4</div>
+                </div>
+
+                <!-- Set Progress Dots -->
+                <div class="flex justify-center gap-4 mb-5">
+                    <div class="set-dot set-dot-complete">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                    </div>
+                    <div class="set-dot set-dot-current">2</div>
+                    <div class="set-dot set-dot-pending">3</div>
+                    <div class="set-dot set-dot-pending">4</div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button class="btn-secondary flex-1 flex items-center justify-center gap-2">
+                        <i data-lucide="pause" class="w-4 h-4"></i>
+                        Pausar
+                    </button>
+                    <button class="btn-primary flex-1 flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        Registrar Set
+                    </button>
+                </div>
+            </div>
+
+            <!-- Section Label -->
+            <div class="flex items-center justify-between mb-3 relative z-10">
+                <p class="text-xs font-medium tracking-[0.15em] text-white/40 uppercase">Todos los Ejercicios</p>
+                <p class="text-xs text-white/40">3/4 completados</p>
+            </div>
+
+            <!-- Exercise List -->
+            <div class="space-y-2 mb-6 relative z-10">
+                <!-- Completed -->
+                <div class="glass-card exercise-card p-4 flex items-center gap-4">
+                    <div class="w-8 h-8 rounded-full bg-[#00F5AA] flex items-center justify-center">
+                        <i data-lucide="check" class="w-4 h-4 text-[#050505]"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-white/50">Incline DB Press</p>
+                        <p class="text-xs text-white/30">3 x 10-12 @ RPE 7</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-white/20"></i>
+                </div>
+
+                <!-- Completed -->
+                <div class="glass-card exercise-card p-4 flex items-center gap-4">
+                    <div class="w-8 h-8 rounded-full bg-[#00F5AA] flex items-center justify-center">
+                        <i data-lucide="check" class="w-4 h-4 text-[#050505]"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-white/50">Cable Flyes</p>
+                        <p class="text-xs text-white/30">3 x 12-15 @ RPE 8</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-white/20"></i>
+                </div>
+
+                <!-- Current -->
+                <div class="glass-card exercise-card active p-4 flex items-center gap-4">
+                    <div class="w-8 h-8 rounded-full bg-[#6D00FF] flex items-center justify-center">
+                        <i data-lucide="play" class="w-3 h-3 text-white fill-white"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-white">Bench Press</p>
+                        <p class="text-xs text-white/50">4 x 8-10 @ RPE 8</p>
+                    </div>
+                    <div class="status-pill text-[10px]">En curso</div>
+                </div>
+
+                <!-- Pending -->
+                <div class="glass-card exercise-card p-4 flex items-center gap-4">
+                    <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                        <span class="text-xs font-medium text-white/40">4</span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-white/70">Tricep Pushdown</p>
+                        <p class="text-xs text-white/30">3 x 12-15 @ RPE 7</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-white/20"></i>
+                </div>
+            </div>
+
+            <!-- Finish Button -->
+            <button class="w-full py-4 rounded-xl bg-[#00F5AA]/10 border border-[#00F5AA]/30 text-[#00F5AA] font-semibold flex items-center justify-center gap-2 relative z-10 mb-20">
+                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                Finalizar Sesión
+            </button>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <div class="tab-item">
+                <i data-lucide="home" class="w-5 h-5"></i>
+            </div>
+            <div class="tab-item active">
+                <i data-lucide="dumbbell" class="w-5 h-5"></i>
+            </div>
+            <div class="tab-item">
+                <i data-lucide="message-circle" class="w-5 h-5"></i>
+            </div>
+            <div class="tab-item">
+                <i data-lucide="trending-up" class="w-5 h-5"></i>
+            </div>
+            <div class="tab-item">
+                <i data-lucide="user" class="w-5 h-5"></i>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>

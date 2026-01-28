@@ -1,8 +1,10 @@
 import React from 'react';
-import { StyleSheet, View, ViewStyle, StyleProp, Image, ImageSourcePropType } from 'react-native';
+import { StyleSheet, View, ViewStyle, StyleProp, ImageSourcePropType, Pressable } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ImageSource } from 'expo-image';
 import { colors, borderRadius, spacing, gradients } from '@/constants/theme';
+import { OptimizedImage, OverlayType } from './OptimizedImage';
 
 type CardVariant = 'default' | 'elevated' | 'mint' | 'hero';
 
@@ -13,7 +15,11 @@ interface GlassCardProps {
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | number;
   highlight?: boolean;
   variant?: CardVariant;
-  backgroundImage?: ImageSourcePropType;
+  backgroundImage?: ImageSourcePropType | ImageSource | string;
+  backgroundOverlay?: OverlayType;
+  backgroundOverlayOpacity?: number;
+  onPress?: () => void;
+  disabled?: boolean;
   testID?: string;
 }
 
@@ -34,6 +40,10 @@ export function GlassCard({
   highlight = true,
   variant = 'default',
   backgroundImage,
+  backgroundOverlay = 'gradient',
+  backgroundOverlayOpacity = 0.6,
+  onPress,
+  disabled = false,
   testID,
 }: GlassCardProps) {
   const paddingMap = {
@@ -59,24 +69,22 @@ export function GlassCard({
     ? ['rgba(0, 245, 170, 0)', 'rgba(0, 245, 170, 0.6)', 'rgba(0, 245, 170, 0)']
     : gradients.glassHighlight;
 
-  return (
-    <View style={containerStyles} testID={testID}>
+  const cardContent = (
+    <>
       {/* Outer glow for elevated variant */}
       {variant === 'elevated' && (
         <View style={styles.outerGlow} />
       )}
 
-      {/* Optional Background Image */}
+      {/* Optional Background Image with OptimizedImage */}
       {backgroundImage && (
-        <>
-          <Image
-            source={backgroundImage}
-            style={StyleSheet.absoluteFill}
-            resizeMode="cover"
-          />
-          {/* Dark overlay for text legibility on images */}
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(5, 5, 5, 0.6)' }]} />
-        </>
+        <OptimizedImage
+          source={backgroundImage as ImageSource}
+          style={StyleSheet.absoluteFill}
+          overlay={backgroundOverlay}
+          overlayOpacity={backgroundOverlayOpacity}
+          priority="high"
+        />
       )}
 
       <BlurView
@@ -116,6 +124,30 @@ export function GlassCard({
         style={styles.innerShadow}
         pointerEvents="none"
       />
+    </>
+  );
+
+  // Wrap with Pressable if onPress is provided
+  if (onPress) {
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          containerStyles,
+          pressed && !disabled && styles.pressed,
+          disabled && styles.disabled,
+        ]}
+        onPress={onPress}
+        disabled={disabled}
+        testID={testID}
+      >
+        {cardContent}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View style={containerStyles} testID={testID}>
+      {cardContent}
     </View>
   );
 }
@@ -183,5 +215,12 @@ const styles = StyleSheet.create({
     height: 40,
     borderBottomLeftRadius: borderRadius.xl,
     borderBottomRightRadius: borderRadius.xl,
+  },
+  pressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });

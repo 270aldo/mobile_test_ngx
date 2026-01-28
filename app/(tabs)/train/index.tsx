@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,9 +15,11 @@ import {
   Zap,
 } from 'lucide-react-native';
 import { GlassCard, Button, StatusPill, ProgressRing, EmptyState } from '@/components/ui';
+import { SetLogger, RestTimer, WorkoutSummary } from '@/components/workout';
+import type { SetLogData, WorkoutSummaryData } from '@/components/workout';
 import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
 import { useTodayWorkout, useSeasonLoading } from '@/stores/season';
-import { useWorkoutStore, useCurrentWorkout, useExerciseBlocks, useWorkoutInProgress } from '@/stores/workout';
+import { useWorkoutStore, useCurrentWorkout, useExerciseBlocks, useWorkoutInProgress, useSetLogs } from '@/stores/workout';
 import { useUser } from '@/stores/auth';
 import type { ExerciseBlock } from '@/types';
 
@@ -31,10 +33,19 @@ export default function TrainScreen() {
   const isWorkoutInProgress = useWorkoutInProgress();
   const startWorkout = useWorkoutStore((s) => s.startWorkout);
   const completeWorkout = useWorkoutStore((s) => s.completeWorkout);
+  const logSet = useWorkoutStore((s) => s.logSet);
+  const setLogs = useSetLogs();
 
   // Timer state
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  // Workout player state
+  const [showSetLogger, setShowSetLogger] = useState(false);
+  const [showRestTimer, setShowRestTimer] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [currentSetIndex, setCurrentSetIndex] = useState(0);
+  const [lastLoggedWeight, setLastLoggedWeight] = useState<number | undefined>();
 
   // Timer effect
   useEffect(() => {
@@ -66,17 +77,126 @@ export default function TrainScreen() {
   const completedCount = completedIds.size;
   const progress = exercises.length > 0 ? (completedCount / exercises.length) * 100 : 0;
 
+  // Current exercise (defined early for use in handlers)
+  const currentExercise = exercises[currentIndex] as ExerciseBlock | undefined;
+
   // Start workout handler
   const handleStartWorkout = useCallback(async () => {
     if (!user?.id || !todayWorkout?.id) return;
-    await startWorkout(user.id, todayWorkout.id);
+    await startWorkout(todayWorkout.id, user.id);
   }, [user?.id, todayWorkout?.id, startWorkout]);
 
-  // Complete set handler
+  // Complete exercise handler
   const handleCompleteExercise = useCallback((exerciseId: string) => {
     setCompletedIds((prev) => new Set([...prev, exerciseId]));
     setCurrentIndex((prev) => Math.min(prev + 1, exercises.length - 1));
   }, [exercises.length]);
+
+  // Set logging flow handlers
+  const handleSaveSet = useCallback(async (data: SetLogData) => {
+    if (!currentExercise) return;
+
+    // Save to store
+    await logSet({
+      exercise_block_id: currentExercise.id,
+      workout_log_id: '', // Will be filled by store
+      set_number: currentSetIndex + 1,
+      weight_kg: data.weight_kg,
+      reps_completed: data.reps_completed,
+      rpe: data.rpe ?? null,
+      completed: data.completed,
+      notes: null,
+    });
+
+    // Track last weight for reference
+    setLastLoggedWeight(data.weight_kg);
+
+    // Close logger
+    setShowSetLogger(false);
+
+    // Check if this was the last set of the exercise
+    const totalSets = currentExercise.sets || 3;
+    const isLastSet = currentSetIndex + 1 >= totalSets;
+
+    if (isLastSet) {
+      // Mark exercise complete, move to next
+      handleCompleteExercise(currentExercise.id);
+      setCurrentSetIndex(0);
+      setLastLoggedWeight(undefined);
+
+      // Check if workout is complete
+      if (currentIndex + 1 >= exercises.length) {
+        setShowSummary(true);
+      }
+    } else {
+      // Show rest timer, then increment set
+      setShowRestTimer(true);
+    }
+  }, [currentExercise, currentSetIndex, currentIndex, exercises.length, logSet, handleCompleteExercise]);
+
+  // Rest timer handlers
+  const handleRestComplete = useCallback(() => {
+    setShowRestTimer(false);
+    setCurrentSetIndex(prev => prev + 1);
+  }, []);
+
+  const handleRestSkip = useCallback(() => {
+    setShowRestTimer(false);
+    setCurrentSetIndex(prev => prev + 1);
+  }, []);
+
+  const handleRestExtend = useCallback((seconds: number) => {
+    // RestTimer handles internally, just log if needed
+    console.log(`Extended rest by ${seconds}s`);
+  }, []);
+
+  // Workout summary handlers
+  const handleSaveSummary = useCallback(async (data: WorkoutSummaryData) => {
+    await completeWorkout({
+      mood_after: data.mood_after,
+      notes: data.notes,
+    });
+    setShowSummary(false);
+    router.replace('/(tabs)');
+  }, [completeWorkout, router]);
+
+  const handleCloseSummary = useCallback(() => {
+    setShowSummary(false);
+    router.replace('/(tabs)');
+  }, [router]);
+
+  // Calculate real stats from set logs
+  const workoutStats = useMemo(() => {
+    const totalSets = setLogs.length;
+    const totalReps = setLogs.reduce((sum, log) => sum + (log.reps_completed ?? 0), 0);
+    const totalVolume = setLogs.reduce((sum, log) => sum + ((log.weight_kg ?? 0) * (log.reps_completed ?? 0)), 0);
+    const estimatedCalories = Math.round(totalVolume * 0.05); // rough estimate
+    const logsWithRpe = setLogs.filter(l => l.rpe != null);
+    const averageRpe = logsWithRpe.length > 0
+      ? logsWithRpe.reduce((sum, log) => sum + (log.rpe ?? 0), 0) / logsWithRpe.length
+      : undefined;
+
+    // Sets remaining calculation
+    const totalExpectedSets = exercises.reduce((sum, ex) => sum + (ex.sets || 3), 0);
+    const setsRemaining = totalExpectedSets - totalSets;
+
+    return {
+      totalSets,
+      totalReps,
+      totalVolume,
+      estimatedCalories,
+      averageRpe,
+      setsRemaining,
+    };
+  }, [setLogs, exercises]);
+
+  // Format number helper
+  const formatNumber = (num: number) => {
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}k`;
+    }
+    return num.toString();
+  };
 
   // If loading or no workout
   if (isLoading) {
@@ -105,8 +225,6 @@ export default function TrainScreen() {
       </View>
     );
   }
-
-  const currentExercise = exercises[currentIndex];
 
   return (
     <View style={styles.container}>
@@ -170,19 +288,19 @@ export default function TrainScreen() {
             <View style={styles.statsRow}>
               <View style={styles.stat}>
                 <Flame size={16} color={colors.warning} />
-                <Text style={styles.statValue}>186</Text>
+                <Text style={styles.statValue}>{workoutStats.estimatedCalories}</Text>
                 <Text style={styles.statLabel}>kcal</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.stat}>
                 <Zap size={16} color={colors.mint} />
-                <Text style={styles.statValue}>4,200</Text>
+                <Text style={styles.statValue}>{formatNumber(workoutStats.totalVolume)}</Text>
                 <Text style={styles.statLabel}>kg vol</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.stat}>
                 <Timer size={16} color={colors.ngx} />
-                <Text style={styles.statValue}>3</Text>
+                <Text style={styles.statValue}>{workoutStats.setsRemaining}</Text>
                 <Text style={styles.statLabel}>sets left</Text>
               </View>
             </View>
@@ -205,23 +323,23 @@ export default function TrainScreen() {
                     {currentExercise.sets || 3} x {currentExercise.reps || '8-12'} @ {currentExercise.weight_prescription || 'RPE 7-8'}
                   </Text>
                 </View>
-                <StatusPill>{`Set 1/${currentExercise.sets || 3}`}</StatusPill>
+                <StatusPill>{`Set ${currentSetIndex + 1}/${currentExercise.sets || 3}`}</StatusPill>
               </View>
 
               {/* Set Progress */}
               <View style={styles.setProgress}>
-                {Array.from({ length: currentExercise.sets || 3 }, (_, i) => i + 1).map((set: number) => (
+                {Array.from({ length: currentExercise.sets || 3 }, (_, i) => (
                   <View
-                    key={set}
+                    key={i}
                     style={[
                       styles.setDot,
-                      set < 1 && styles.setDotComplete,
-                      set === 1 && styles.setDotCurrent,
+                      i < currentSetIndex && styles.setDotComplete,
+                      i === currentSetIndex && styles.setDotCurrent,
                     ]}
                   >
-                    {set < 1 && <CheckCircle2 size={14} color={colors.void} />}
-                    {set === 1 && <Text style={styles.setDotText}>{set}</Text>}
-                    {set > 1 && <Text style={styles.setDotTextInactive}>{set}</Text>}
+                    {i < currentSetIndex && <CheckCircle2 size={14} color={colors.void} />}
+                    {i === currentSetIndex && <Text style={styles.setDotText}>{i + 1}</Text>}
+                    {i > currentSetIndex && <Text style={styles.setDotTextInactive}>{i + 1}</Text>}
                   </View>
                 ))}
               </View>
@@ -238,11 +356,11 @@ export default function TrainScreen() {
                 </Button>
                 <Button
                   variant="primary"
-                  onPress={() => handleCompleteExercise(currentExercise.id)}
+                  onPress={() => setShowSetLogger(true)}
                   style={styles.actionBtn}
                 >
                   <CheckCircle2 size={16} color={colors.text} style={{ marginRight: 6 }} />
-                  Completar
+                  Registrar Set
                 </Button>
               </View>
             </GlassCard>
@@ -311,7 +429,7 @@ export default function TrainScreen() {
           {/* Finish Button */}
           <Button
             variant="mint"
-            onPress={() => {}}
+            onPress={() => setShowSummary(true)}
             fullWidth
             style={styles.finishButton}
           >
@@ -319,6 +437,49 @@ export default function TrainScreen() {
           </Button>
         </ScrollView>
       </SafeAreaView>
+
+      {/* Set Logger Modal */}
+      {currentExercise && (
+        <SetLogger
+          visible={showSetLogger}
+          onClose={() => setShowSetLogger(false)}
+          onSave={handleSaveSet}
+          exerciseName={currentExercise.exercise_name}
+          setNumber={currentSetIndex + 1}
+          totalSets={currentExercise.sets || 3}
+          lastWeight={lastLoggedWeight}
+          targetReps={currentExercise.reps || '8-12'}
+          recommendedRpe={8}
+        />
+      )}
+
+      {/* Rest Timer */}
+      <RestTimer
+        visible={showRestTimer}
+        duration={currentExercise?.rest_seconds || 90}
+        onComplete={handleRestComplete}
+        onSkip={handleRestSkip}
+        onExtend={handleRestExtend}
+        coachNote={currentExercise?.coaching_cues?.[0]}
+        nextExercise={exercises[currentIndex + 1]?.exercise_name}
+      />
+
+      {/* Workout Summary */}
+      <WorkoutSummary
+        visible={showSummary}
+        workoutTitle={todayWorkout?.title || 'Workout'}
+        workoutType={todayWorkout?.type ?? undefined}
+        duration={Math.floor(elapsedSeconds / 60)}
+        stats={{
+          totalSets: workoutStats.totalSets,
+          totalReps: workoutStats.totalReps,
+          totalVolume: workoutStats.totalVolume,
+          estimatedCalories: workoutStats.estimatedCalories,
+          averageRpe: workoutStats.averageRpe,
+        }}
+        onSave={handleSaveSummary}
+        onClose={handleCloseSummary}
+      />
     </View>
   );
 }
