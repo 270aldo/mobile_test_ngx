@@ -80,3 +80,25 @@ export {
   useHasTodayCheckin,
   useActiveCoachNote,
 } from './progress';
+
+// Nutrition store
+export {
+  useNutritionStore,
+  useNutritionMeals,
+  useNutritionTargets,
+  useNutritionTotals,
+  useNutritionLoading,
+  useNutritionError,
+} from './nutrition';
+
+// Mindfulness store
+export {
+  useMindfulnessStore,
+  useTodayMindfulnessSessions,
+  useMindfulnessHistory,
+  useHasCompletedMindfulnessToday,
+  useMindfulnessLoading,
+  useMindfulnessError,
+  useTodayMindfulnessCount,
+  useTotalMindfulnessMinutes,
+} from './mindfulness';

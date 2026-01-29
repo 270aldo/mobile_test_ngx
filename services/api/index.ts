@@ -10,6 +10,8 @@ export { workoutApi } from './workout';
 export { chatApi } from './chat';
 export { checkinApi } from './checkin';
 export { coachApi } from './coach';
+export { nutritionApi } from './nutrition';
+export { mindfulnessApi } from './mindfulness';
 
 // Re-export error handling utilities
 export { ApiError, handleQueryResult, handleQueryResultOrNull } from './base';

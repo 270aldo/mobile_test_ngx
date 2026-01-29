@@ -147,12 +147,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const { useChatStore } = await import('./chat');
       const { useWorkoutStore } = await import('./workout');
       const { useProgressStore } = await import('./progress');
+      const { useNutritionStore } = await import('./nutrition');
+      const { useMindfulnessStore } = await import('./mindfulness');
 
       useProfileStore.getState().reset();
       useSeasonStore.getState().reset();
       useChatStore.getState().reset();
       useWorkoutStore.getState().reset();
       useProgressStore.getState().reset();
+      useNutritionStore.getState().reset();
+      useMindfulnessStore.getState().reset();
 
       set({
         user: null,

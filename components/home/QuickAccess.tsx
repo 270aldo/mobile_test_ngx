@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Dumbbell, Utensils, Brain } from 'lucide-react-native';
+import { Dumbbell, Utensils, Brain, Video } from 'lucide-react-native';
 import { GlassCard, Label } from '@/components/ui';
 import { colors, spacing, typography } from '@/constants/theme';
 
@@ -28,6 +28,14 @@ const MODULES = [
     color: colors.mint,
     borderColor: 'rgba(0, 245, 170, 0.15)',
     route: '/(tabs)/mind' as const,
+  },
+  {
+    key: 'video',
+    label: 'Video',
+    icon: Video,
+    color: colors.ngx,
+    borderColor: 'rgba(109, 0, 255, 0.15)',
+    route: '/(tabs)/video' as const,
   },
 ] as const;
 
@@ -65,10 +73,11 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   tile: {
-    flex: 1,
+    flexBasis: '48%',
   },
   tileCard: {
     alignItems: 'center',

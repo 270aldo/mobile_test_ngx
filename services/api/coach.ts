@@ -103,7 +103,7 @@ export const coachApi = {
    */
   getStreak: async (
     userId: string,
-    streakType: 'workout' | 'checkin' | 'hydration'
+    streakType: 'workout' | 'checkin' | 'hydration' | 'mindfulness'
   ): Promise<Streak | null> => {
     const { data, error } = await supabase
       .from('streaks')
@@ -120,7 +120,7 @@ export const coachApi = {
    */
   updateStreak: async (
     userId: string,
-    streakType: 'workout' | 'checkin' | 'hydration'
+    streakType: 'workout' | 'checkin' | 'hydration' | 'mindfulness'
   ): Promise<Streak> => {
     const today = new Date().toISOString().split('T')[0];
     const existingStreak = await coachApi.getStreak(userId, streakType);

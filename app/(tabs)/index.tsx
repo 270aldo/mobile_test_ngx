@@ -15,6 +15,8 @@ import { CoachNoteCard } from '@/components/ui';
 import { useUser } from '@/stores/auth';
 import { useProfile } from '@/stores/profile';
 import { useActiveSeason, useTodayWorkout, useWeekWorkouts } from '@/stores/season';
+import { useNutritionTotals, useNutritionTargets } from '@/stores/nutrition';
+import { useHasCompletedMindfulnessToday } from '@/stores/mindfulness';
 import { useAppData } from '@/hooks';
 import { useCoachNotesByLocation, useCoachNotes } from '@/hooks/useCoachNotes';
 import { colors, spacing, layout } from '@/constants/theme';
@@ -51,7 +53,10 @@ export default function HomeScreen() {
   const activeSeason = useActiveSeason();
   const todayWorkout = useTodayWorkout();
   const weekWorkouts = useWeekWorkouts();
+  const nutritionTotals = useNutritionTotals();
+  const nutritionTargets = useNutritionTargets();
   const homeNotes = useCoachNotesByLocation('home');
+  const mindfulnessCompleted = useHasCompletedMindfulnessToday();
   const { dismiss: dismissNote } = useCoachNotes();
 
   // Display name from profile or email fallback
@@ -78,7 +83,7 @@ export default function HomeScreen() {
   // Check if it's morning for mind card visibility
   const hour = new Date().getHours();
   const isMorning = hour >= 5 && hour < 12;
-  const showMindCard = isMorning && !mindDismissed;
+  const showMindCard = isMorning && !mindDismissed && !mindfulnessCompleted;
 
   return (
     <View style={styles.container}>
@@ -152,10 +157,10 @@ export default function HomeScreen() {
 
           {/* 4. Nutrition Card - Macros + next meal */}
           <NutritionCard
-            calories={{ current: 0, target: 2200 }}
-            protein={{ current: 0, target: 180 }}
-            carbs={{ current: 0, target: 220 }}
-            fat={{ current: 0, target: 70 }}
+            calories={{ current: nutritionTotals.calories, target: nutritionTargets.calories }}
+            protein={{ current: nutritionTotals.protein, target: nutritionTargets.protein }}
+            carbs={{ current: nutritionTotals.carbs, target: nutritionTargets.carbs }}
+            fat={{ current: nutritionTotals.fat, target: nutritionTargets.fat }}
             nextMeal="Desayuno"
             testID="nutrition-card"
           />

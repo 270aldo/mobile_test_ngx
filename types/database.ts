@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       badges: {
@@ -299,6 +324,62 @@ export type Database = {
           },
         ]
       }
+      food_logs: {
+        Row: {
+          calories: number
+          carbs: number
+          created_at: string | null
+          date: string
+          fat: number
+          id: string
+          meal_type: string
+          name: string
+          protein: number
+          serving_size: string | null
+          source: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          calories?: number
+          carbs?: number
+          created_at?: string | null
+          date: string
+          fat?: number
+          id?: string
+          meal_type: string
+          name: string
+          protein?: number
+          serving_size?: string | null
+          source?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          calories?: number
+          carbs?: number
+          created_at?: string | null
+          date?: string
+          fat?: number
+          id?: string
+          meal_type?: string
+          name?: string
+          protein?: number
+          serving_size?: string | null
+          source?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachments: Json | null
@@ -344,6 +425,109 @@ export type Database = {
             foreignKeyName: "messages_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mindfulness_sessions: {
+        Row: {
+          category: string | null
+          completed: boolean | null
+          created_at: string | null
+          date: string
+          duration_seconds: number
+          id: string
+          phases_completed: number | null
+          session_id: string
+          session_title: string
+          target_duration_seconds: number | null
+          total_phases: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          completed?: boolean | null
+          created_at?: string | null
+          date: string
+          duration_seconds: number
+          id?: string
+          phases_completed?: number | null
+          session_id: string
+          session_title: string
+          target_duration_seconds?: number | null
+          total_phases?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          completed?: boolean | null
+          created_at?: string | null
+          date?: string
+          duration_seconds?: number
+          id?: string
+          phases_completed?: number | null
+          session_id?: string
+          session_title?: string
+          target_duration_seconds?: number | null
+          total_phases?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mindfulness_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutrition_targets: {
+        Row: {
+          calories: number
+          carbs: number
+          created_at: string | null
+          fat: number
+          id: string
+          notes: string | null
+          protein: number
+          set_by: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          calories?: number
+          carbs?: number
+          created_at?: string | null
+          fat?: number
+          id?: string
+          notes?: string | null
+          protein?: number
+          set_by?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          calories?: number
+          carbs?: number
+          created_at?: string | null
+          fat?: number
+          id?: string
+          notes?: string | null
+          protein?: number
+          set_by?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_targets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -915,6 +1099,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

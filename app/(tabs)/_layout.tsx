@@ -75,6 +75,7 @@ export default function TabLayout() {
               </LinearGradient>
             </View>
           ),
+          tabBarStyle: { display: 'none' },
         }}
       />
 
@@ -120,6 +121,12 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="mind"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="video"
         options={{
           href: null,
         }}

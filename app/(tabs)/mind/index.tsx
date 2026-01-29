@@ -1,27 +1,129 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ImageBackground } from 'react-native';
+import { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Play, Moon, Wind, Focus, Zap } from 'lucide-react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { Play, Moon, Wind, Zap } from 'lucide-react-native';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
 import { GlassCard, Button } from '@/components/ui';
 import { VisualizationPlayer } from '@/components/mindfulness';
+import { useUser } from '@/stores';
+import { useMindfulnessStore } from '@/stores/mindfulness';
+
+const MORNING_SESSION_ID = 'morning';
+
+const MORNING_SESSION = {
+    id: MORNING_SESSION_ID,
+    title: 'Visualización Matutina',
+    durationMinutes: 5,
+    category: 'Mañana',
+    icon: Zap,
+    color: colors.warning,
+    phases: [
+        { id: 'breath', name: 'Respiración', duration: 30, instruction: 'Inhala profundo. Exhala lento. Suelta la tensión.' },
+        { id: 'visual', name: 'Visualización', duration: 120, instruction: 'Visualiza tu entrenamiento. Técnica limpia. Energía estable.' },
+        { id: 'intent', name: 'Intención', duration: 90, instruction: 'Elige una intención clara para tu día y repítela con calma.' },
+        { id: 'close', name: 'Cierre', duration: 60, instruction: 'Abre los ojos lentamente. Estás listo para tu día.' },
+    ],
+};
 
 const SESSIONS = [
-    { id: '1', title: 'Enfoque Profundo', duration: '20 min', category: 'Enfoque', icon: Zap, color: colors.warning },
-    { id: '2', title: 'Liberar Ansiedad', duration: '10 min', category: 'Calma', icon: Wind, color: colors.mint },
-    { id: '3', title: 'Preparar el Sueño', duration: '15 min', category: 'Sueño', icon: Moon, color: '#6A5ACD' },
+    {
+        id: 'focus',
+        title: 'Enfoque Profundo',
+        durationMinutes: 20,
+        category: 'Enfoque',
+        icon: Zap,
+        color: colors.warning,
+        phases: [
+            { id: 'arrive', name: 'Aterrizar', duration: 120, instruction: 'Respira profundo. Suelta cualquier ruido mental.' },
+            { id: 'focus', name: 'Foco', duration: 420, instruction: 'Elige un objetivo. Visualiza tu ejecución sin interrupciones.' },
+            { id: 'flow', name: 'Flow', duration: 420, instruction: 'Permanece en el presente. Mantén el ritmo con calma.' },
+            { id: 'reset', name: 'Integración', duration: 240, instruction: 'Integra el enfoque. Define el siguiente paso claro.' },
+        ],
+    },
+    {
+        id: 'calm',
+        title: 'Liberar Ansiedad',
+        durationMinutes: 10,
+        category: 'Calma',
+        icon: Wind,
+        color: colors.mint,
+        phases: [
+            { id: 'breath', name: 'Respirar', duration: 60, instruction: 'Inhala por 4, exhala por 6. Suelta el pecho.' },
+            { id: 'release', name: 'Soltar', duration: 180, instruction: 'Identifica tensión. Relájala lentamente.' },
+            { id: 'ground', name: 'Enraizar', duration: 240, instruction: 'Siente el cuerpo estable. Nada que resolver ahora.' },
+            { id: 'close', name: 'Cerrar', duration: 120, instruction: 'Regresa con una respiración profunda.' },
+        ],
+    },
+    {
+        id: 'sleep',
+        title: 'Preparar el Sueño',
+        durationMinutes: 15,
+        category: 'Sueño',
+        icon: Moon,
+        color: '#6A5ACD',
+        phases: [
+            { id: 'unwind', name: 'Desacelerar', duration: 90, instruction: 'Suaviza el ritmo. Relaja el cuello y la mandíbula.' },
+            { id: 'body', name: 'Escaneo', duration: 300, instruction: 'Revisa tu cuerpo. Suelta cada zona con calma.' },
+            { id: 'drift', name: 'Soltar el día', duration: 300, instruction: 'Deja ir lo que no necesitas hoy.' },
+            { id: 'close', name: 'Transición', duration: 210, instruction: 'Respira profundo. Deja que el sueño llegue.' },
+        ],
+    },
 ];
 
 export default function MindScreen() {
-    const [activeSession, setActiveSession] = useState<string | null>(null);
+    const params = useLocalSearchParams<{ session?: string }>();
+    const initialSession = typeof params.session === 'string' ? params.session : null;
+    const [activeSession, setActiveSession] = useState<string | null>(initialSession);
+    const user = useUser();
+    const recordSession = useMindfulnessStore((s) => s.recordSession);
 
-    if (activeSession === 'morning-vis') {
+    const selectedSession = useMemo(() => {
+        if (!activeSession) return null;
+        if (activeSession === MORNING_SESSION_ID) return MORNING_SESSION;
+        return SESSIONS.find((session) => session.id === activeSession) ?? null;
+    }, [activeSession]);
+
+    if (selectedSession) {
         return (
             <View style={styles.container}>
                 <VisualizationPlayer
-                    onComplete={() => setActiveSession(null)}
-                    onSkip={() => setActiveSession(null)}
+                    title={selectedSession.title}
+                    totalDuration={selectedSession.durationMinutes}
+                    phases={selectedSession.phases}
+                    onComplete={() => {
+                        if (user?.id && selectedSession) {
+                            const totalSeconds = selectedSession.phases.reduce((s, p) => s + p.duration, 0);
+                            recordSession(user.id, {
+                                session_id: selectedSession.id,
+                                session_title: selectedSession.title,
+                                category: selectedSession.category,
+                                duration_seconds: totalSeconds,
+                                target_duration_seconds: totalSeconds,
+                                completed: true,
+                                phases_completed: selectedSession.phases.length,
+                                total_phases: selectedSession.phases.length,
+                            });
+                        }
+                        setActiveSession(null);
+                    }}
+                    onSkip={() => {
+                        if (user?.id && selectedSession) {
+                            const totalSeconds = selectedSession.phases.reduce((s, p) => s + p.duration, 0);
+                            recordSession(user.id, {
+                                session_id: selectedSession.id,
+                                session_title: selectedSession.title,
+                                category: selectedSession.category,
+                                duration_seconds: 0,
+                                target_duration_seconds: totalSeconds,
+                                completed: false,
+                                phases_completed: 0,
+                                total_phases: selectedSession.phases.length,
+                            });
+                        }
+                        setActiveSession(null);
+                    }}
                 />
             </View>
         );
@@ -54,7 +156,7 @@ export default function MindScreen() {
                     </View>
 
                     {/* Featured: Morning Visualization */}
-                    <Pressable onPress={() => setActiveSession('morning-vis')}>
+                    <Pressable onPress={() => setActiveSession(MORNING_SESSION_ID)}>
                         <GlassCard variant="hero" style={styles.featuredCard}>
                             <View style={styles.featuredContent}>
                                 <View style={styles.featuredBadge}>
@@ -100,7 +202,7 @@ export default function MindScreen() {
                             </View>
                             <View style={styles.sessionInfo}>
                                 <Text style={styles.sessionTitle}>{session.title}</Text>
-                                <Text style={styles.sessionMeta}>{session.category} • {session.duration}</Text>
+                                <Text style={styles.sessionMeta}>{session.category} • {session.durationMinutes} min</Text>
                             </View>
                             <Button
                                 size="sm"

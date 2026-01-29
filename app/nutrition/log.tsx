@@ -15,6 +15,8 @@ import {
 } from 'lucide-react-native';
 import { GlassCard, Button, Label } from '@/components/ui';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
+import { useNutritionStore, type MealType } from '@/stores/nutrition';
+import { useUser } from '@/stores';
 
 interface QuickAddItem {
   id: string;
@@ -52,6 +54,16 @@ const FAVORITES: QuickAddItem[] = [
 export default function NutritionLogScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const addFood = useNutritionStore((s) => s.addFood);
+  const user = useUser();
+
+  const getSuggestedMeal = (): MealType => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 10) return 'breakfast';
+    if (hour >= 10 && hour < 15) return 'lunch';
+    if (hour >= 15 && hour < 20) return 'dinner';
+    return 'snacks';
+  };
 
   const handleCameraPress = () => {
     // TODO: Navigate to camera with SCAN mode
@@ -64,8 +76,7 @@ export default function NutritionLogScreen() {
   };
 
   const handleAddFood = (food: QuickAddItem) => {
-    // TODO: Add to today's log and navigate back
-    console.log('Adding food:', food);
+    addFood(getSuggestedMeal(), food, user?.id);
     router.back();
   };
 

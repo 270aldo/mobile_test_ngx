@@ -26,6 +26,8 @@ interface VisualizationPlayerProps {
   workoutName?: string;
   /** Total duration in minutes */
   totalDuration?: number;
+  /** Optional custom phases for the session */
+  phases?: VisualizationPhase[];
   /** Coach name for affirmation */
   coachNote?: string;
   /** On completion callback */
@@ -81,7 +83,8 @@ const DEFAULT_PHASES: VisualizationPhase[] = [
 export function VisualizationPlayer({
   title = 'Visualización Matutina',
   workoutName = 'Push Day',
-  totalDuration = 5,
+  totalDuration,
+  phases: customPhases,
   coachNote,
   onComplete,
   onSkip,
@@ -96,10 +99,23 @@ export function VisualizationPlayer({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onCompleteRef = useRef(onComplete);
 
+  const phases = customPhases && customPhases.length > 0 ? customPhases : DEFAULT_PHASES;
+  const sessionDurationSeconds = totalDuration != null
+    ? totalDuration * 60
+    : phases.reduce((sum, phase) => sum + phase.duration, 0);
+
   // Keep callback ref fresh
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
+
+  useEffect(() => {
+    // Reset session state when content changes
+    setIsPlaying(false);
+    setCurrentPhaseIndex(0);
+    setElapsedTime(0);
+    setPhaseElapsedTime(0);
+  }, [phases, sessionDurationSeconds]);
 
   // Breathing animation
   const breathScale = useSharedValue(1);
@@ -133,23 +149,22 @@ export function VisualizationPlayer({
       timerRef.current = setInterval(() => {
         setElapsedTime((prev) => {
           const newTime = prev + 1;
-          const totalSeconds = totalDuration * 60;
 
-          if (newTime >= totalSeconds) {
+          if (newTime >= sessionDurationSeconds) {
             setIsPlaying(false);
             onCompleteRef.current?.();
-            return totalSeconds;
+            return sessionDurationSeconds;
           }
           return newTime;
         });
 
         setPhaseElapsedTime((prev) => {
-          const currentPhase = DEFAULT_PHASES[currentPhaseIndex];
+          const currentPhase = phases[currentPhaseIndex] ?? phases[0];
           const newPhaseTime = prev + 1;
 
           if (newPhaseTime >= currentPhase.duration) {
             // Move to next phase
-            if (currentPhaseIndex < DEFAULT_PHASES.length - 1) {
+            if (currentPhaseIndex < phases.length - 1) {
               setCurrentPhaseIndex((i) => i + 1);
               return 0;
             }
@@ -169,16 +184,17 @@ export function VisualizationPlayer({
         clearInterval(timerRef.current);
       }
     };
-  }, [isPlaying, currentPhaseIndex, totalDuration]);
+  }, [isPlaying, currentPhaseIndex, phases, sessionDurationSeconds]);
 
   const breathAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: breathScale.value }],
     opacity: breathOpacity.value,
   }));
 
-  const currentPhase = DEFAULT_PHASES[currentPhaseIndex];
-  const totalSeconds = totalDuration * 60;
-  const progressPercent = (elapsedTime / totalSeconds) * 100;
+  const currentPhase = phases[currentPhaseIndex] ?? phases[0];
+  const progressPercent = sessionDurationSeconds > 0
+    ? (elapsedTime / sessionDurationSeconds) * 100
+    : 0;
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -194,7 +210,7 @@ export function VisualizationPlayer({
         <View style={styles.orbInner}>
           <Text style={styles.phaseName}>{currentPhase.name}</Text>
           <Text style={styles.phaseTime}>
-            {formatTime(currentPhase.duration - phaseElapsedTime)}
+            {formatTime(Math.max(0, currentPhase.duration - phaseElapsedTime))}
           </Text>
         </View>
       </View>
@@ -215,13 +231,13 @@ export function VisualizationPlayer({
         </View>
         <View style={styles.timeRow}>
           <Text style={styles.timeText}>{formatTime(elapsedTime)}</Text>
-          <Text style={styles.timeText}>{formatTime(totalSeconds)}</Text>
+          <Text style={styles.timeText}>{formatTime(sessionDurationSeconds)}</Text>
         </View>
       </View>
 
       {/* Phase indicators */}
       <View style={styles.phaseIndicators}>
-        {DEFAULT_PHASES.map((phase, index) => (
+        {phases.map((phase, index) => (
           <View
             key={phase.id}
             style={[

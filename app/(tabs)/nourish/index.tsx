@@ -1,46 +1,21 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { Plus, ScanLine } from 'lucide-react-native';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
 import { GlassCard, Button } from '@/components/ui';
 import { MacroRing, MacroBar, MealCard } from '@/components/nutrition';
-
-// Mock Data
-const MOCK_MEALS = {
-    breakfast: [
-        { id: '1', name: 'Huevos Revueltos con Espinaca', calories: 320, protein: 22, carbs: 4, fat: 24 },
-        { id: '2', name: 'Avena con Frutos Rojos', calories: 280, protein: 8, carbs: 45, fat: 6 },
-    ],
-    lunch: [
-        { id: '3', name: 'Pollo a la Plancha', calories: 350, protein: 45, carbs: 0, fat: 12 },
-        { id: '4', name: 'Arroz Integral y Quinoa', calories: 240, protein: 6, carbs: 48, fat: 3 },
-    ],
-    dinner: [],
-    snacks: [
-        { id: '5', name: 'Protein Shake', calories: 150, protein: 25, carbs: 3, fat: 2 },
-    ],
-};
-
-const TARGETS = {
-    calories: 2400,
-    protein: 180,
-    carbs: 250,
-    fat: 70,
-};
+import { useNutritionMeals, useNutritionTargets, useNutritionTotals } from '@/stores/nutrition';
 
 export default function NourishScreen() {
-    const [meals, setMeals] = useState(MOCK_MEALS);
+    const router = useRouter();
+    const meals = useNutritionMeals();
+    const targets = useNutritionTargets();
+    const totals = useNutritionTotals();
 
-    // Calculate totals
-    const allItems = [...meals.breakfast, ...meals.lunch, ...meals.dinner, ...meals.snacks];
-    const current = {
-        calories: allItems.reduce((sum, item) => sum + item.calories, 0),
-        protein: allItems.reduce((sum, item) => sum + item.protein, 0),
-        carbs: allItems.reduce((sum, item) => sum + item.carbs, 0),
-        fat: allItems.reduce((sum, item) => sum + item.fat, 0),
-    };
+    const current = useMemo(() => totals, [totals]);
 
     return (
         <View style={styles.container}>
@@ -73,7 +48,7 @@ export default function NourishScreen() {
                         <View style={styles.ringContainer}>
                             <MacroRing
                                 current={current.calories}
-                                target={TARGETS.calories}
+                                target={targets.calories}
                                 size={160}
                                 showRemaining
                             />
@@ -83,19 +58,19 @@ export default function NourishScreen() {
                             <MacroBar
                                 label="Proteína"
                                 current={current.protein}
-                                target={TARGETS.protein}
+                                target={targets.protein}
                                 color={colors.mint}
                             />
                             <MacroBar
                                 label="Carbos"
                                 current={current.carbs}
-                                target={TARGETS.carbs}
+                                target={targets.carbs}
                                 color={colors.ngx}
                             />
                             <MacroBar
                                 label="Grasas"
                                 current={current.fat}
-                                target={TARGETS.fat}
+                                target={targets.fat}
                                 color={colors.warning}
                             />
                         </View>
@@ -107,7 +82,7 @@ export default function NourishScreen() {
                         <Button
                             variant="secondary"
                             style={styles.actionBtn}
-                            onPress={() => console.log('Escanear')}
+                            onPress={() => router.push('/(tabs)/camera')}
                         >
                             <ScanLine size={18} color={colors.text} style={{ marginRight: 8 }} />
                             Escanear
@@ -115,7 +90,7 @@ export default function NourishScreen() {
                         <Button
                             variant="primary"
                             style={styles.actionBtn}
-                            onPress={() => console.log('Añadir')}
+                            onPress={() => router.push('/nutrition/log')}
                         >
                             <Plus size={18} color={colors.text} style={{ marginRight: 8 }} />
                             Añadir
@@ -129,7 +104,7 @@ export default function NourishScreen() {
                         type="breakfast"
                         items={meals.breakfast}
                         targetCalories={600}
-                        onAddPress={() => { }}
+                        onAddPress={() => router.push('/nutrition/log')}
                     />
 
                     <MealCard
@@ -137,21 +112,21 @@ export default function NourishScreen() {
                         items={meals.lunch}
                         targetCalories={800}
                         isSuggested={true}
-                        onAddPress={() => { }}
+                        onAddPress={() => router.push('/nutrition/log')}
                     />
 
                     <MealCard
                         type="dinner"
                         items={meals.dinner}
                         targetCalories={700}
-                        onAddPress={() => { }}
+                        onAddPress={() => router.push('/nutrition/log')}
                     />
 
                     <MealCard
                         type="snacks"
                         items={meals.snacks}
                         targetCalories={300}
-                        onAddPress={() => { }}
+                        onAddPress={() => router.push('/nutrition/log')}
                     />
                 </ScrollView>
             </SafeAreaView>

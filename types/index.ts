@@ -35,6 +35,9 @@ export type Message = Tables<'messages'>;
 export type CoachNote = Tables<'coach_notes'>;
 export type Badge = Tables<'badges'>;
 export type Streak = Tables<'streaks'>;
+export type FoodLog = Tables<'food_logs'>;
+export type NutritionTarget = Tables<'nutrition_targets'>;
+export type MindfulnessSession = Tables<'mindfulness_sessions'>;
 
 // Extended types with relationships
 export type WorkoutWithExercises = Workout & {
@@ -88,7 +91,7 @@ export type TabParamList = {
 export type CoachNotePriority = 'info' | 'action' | 'celebration';
 
 // Streak type for consistency tracking
-export type StreakType = 'workout' | 'checkin' | 'hydration';
+export type StreakType = 'workout' | 'checkin' | 'hydration' | 'mindfulness';
 
 // Message role type
 export type MessageRole = 'user' | 'genesis' | 'coach';

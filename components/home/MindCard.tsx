@@ -64,7 +64,7 @@ export function MindCard({
       <View style={styles.actions}>
         <Button
           variant="mint"
-          onPress={() => router.push('/(tabs)/mind')}
+          onPress={() => router.push('/(tabs)/mind?session=morning')}
           style={styles.startButton}
         >
           <Play size={16} color={colors.void} style={{ marginRight: 6 }} />

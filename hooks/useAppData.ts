@@ -11,6 +11,8 @@ import { useProfileStore } from '@/stores/profile';
 import { useSeasonStore } from '@/stores/season';
 import { useProgressStore } from '@/stores/progress';
 import { useChatStore } from '@/stores/chat';
+import { useNutritionStore } from '@/stores/nutrition';
+import { useMindfulnessStore } from '@/stores/mindfulness';
 
 export function useAppData() {
   const user = useUser();
@@ -25,6 +27,9 @@ export function useAppData() {
     useSeasonStore.getState().fetchAll(userId);
     useProgressStore.getState().fetchAll(userId);
     useChatStore.getState().fetchMessages(userId);
+    useNutritionStore.getState().fetchTodayNutrition(userId);
+    useNutritionStore.getState().fetchTargets(userId);
+    useMindfulnessStore.getState().fetchAll(userId);
 
     // Subscribe to realtime messages
     useChatStore.getState().subscribeToMessages(userId);
@@ -52,6 +57,9 @@ export function useRefreshData() {
       useProfileStore.getState().fetchProfile(userId),
       useSeasonStore.getState().fetchAll(userId),
       useProgressStore.getState().fetchAll(userId),
+      useNutritionStore.getState().fetchTodayNutrition(userId),
+      useNutritionStore.getState().fetchTargets(userId),
+      useMindfulnessStore.getState().fetchAll(userId),
     ]);
   }, [user?.id]);
 
