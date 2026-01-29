@@ -40,6 +40,10 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
    * Fetch profile and subscription data
    */
   fetchProfile: async (userId: string) => {
+    if (!userId) {
+      set({ error: 'No user ID provided' });
+      return;
+    }
     set({ isLoading: true, error: null });
 
     try {
@@ -57,6 +61,10 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
    * Update profile data
    */
   updateProfile: async (userId: string, updates: Partial<Profile>) => {
+    if (!userId) {
+      set({ error: 'No user ID provided' });
+      return;
+    }
     set({ isLoading: true, error: null });
 
     try {

@@ -15,7 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ngxgenesis.app"
+      "bundleIdentifier": "com.ngxgenesis.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "NGX GENESIS necesita acceso a la cámara para escanear comida, grabar tu técnica y capturar fotos de progreso.",
+        "NSMicrophoneUsageDescription": "NGX GENESIS necesita acceso al micrófono para grabar videos de técnica."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -43,6 +47,13 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#6D00FF"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "NGX GENESIS necesita acceso a la cámara para escanear comida, grabar tu técnica y capturar fotos de progreso.",
+          "microphonePermission": "NGX GENESIS necesita acceso al micrófono para grabar videos de técnica."
         }
       ]
     ],

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -31,9 +31,6 @@ export default function TrainScreen() {
   const currentWorkout = useCurrentWorkout();
   const exerciseBlocks = useExerciseBlocks();
   const isWorkoutInProgress = useWorkoutInProgress();
-  const startWorkout = useWorkoutStore((s) => s.startWorkout);
-  const completeWorkout = useWorkoutStore((s) => s.completeWorkout);
-  const logSet = useWorkoutStore((s) => s.logSet);
   const setLogs = useSetLogs();
 
   // Timer state
@@ -65,10 +62,12 @@ export default function TrainScreen() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Use real exercise blocks or fallback to todayWorkout blocks
-  const exercises = exerciseBlocks.length > 0
-    ? exerciseBlocks
-    : todayWorkout?.exercise_blocks ?? [];
+  // Use real exercise blocks or fallback to todayWorkout blocks (memoized to stabilize deps)
+  const exercises = useMemo(() => {
+    return exerciseBlocks.length > 0
+      ? exerciseBlocks
+      : todayWorkout?.exercise_blocks ?? [];
+  }, [exerciseBlocks, todayWorkout?.exercise_blocks]);
 
   // Track completed exercises (for now, mock status based on order)
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
@@ -80,11 +79,19 @@ export default function TrainScreen() {
   // Current exercise (defined early for use in handlers)
   const currentExercise = exercises[currentIndex] as ExerciseBlock | undefined;
 
+  // Track whether we're transitioning between exercises (last set completed)
+  const pendingExerciseTransition = useRef(false);
+
   // Start workout handler
   const handleStartWorkout = useCallback(async () => {
     if (!user?.id || !todayWorkout?.id) return;
-    await startWorkout(todayWorkout.id, user.id);
-  }, [user?.id, todayWorkout?.id, startWorkout]);
+    try {
+      await useWorkoutStore.getState().startWorkout(todayWorkout.id, user.id);
+    } catch (error) {
+      console.error('Failed to start workout:', error);
+      Alert.alert('Error', 'No se pudo iniciar el workout.');
+    }
+  }, [user?.id, todayWorkout?.id]);
 
   // Complete exercise handler
   const handleCompleteExercise = useCallback((exerciseId: string) => {
@@ -96,74 +103,114 @@ export default function TrainScreen() {
   const handleSaveSet = useCallback(async (data: SetLogData) => {
     if (!currentExercise) return;
 
-    // Save to store
-    await logSet({
-      exercise_block_id: currentExercise.id,
-      workout_log_id: '', // Will be filled by store
-      set_number: currentSetIndex + 1,
-      weight_kg: data.weight_kg,
-      reps_completed: data.reps_completed,
-      rpe: data.rpe ?? null,
-      completed: data.completed,
-      notes: null,
-    });
-
-    // Track last weight for reference
-    setLastLoggedWeight(data.weight_kg);
-
-    // Close logger
-    setShowSetLogger(false);
-
-    // Check if this was the last set of the exercise
-    const totalSets = currentExercise.sets || 3;
-    const isLastSet = currentSetIndex + 1 >= totalSets;
-
-    if (isLastSet) {
-      // Mark exercise complete, move to next
-      handleCompleteExercise(currentExercise.id);
-      setCurrentSetIndex(0);
-      setLastLoggedWeight(undefined);
-
-      // Check if workout is complete
-      if (currentIndex + 1 >= exercises.length) {
-        setShowSummary(true);
+    try {
+      // Auto-start workout if not started yet
+      if (!isWorkoutInProgress && user?.id && todayWorkout?.id) {
+        await useWorkoutStore.getState().startWorkout(todayWorkout.id, user.id);
       }
-    } else {
-      // Show rest timer, then increment set
-      setShowRestTimer(true);
+
+      // Save to store
+      await useWorkoutStore.getState().logSet({
+        exercise_block_id: currentExercise.id,
+        workout_log_id: '', // Will be filled by store
+        set_number: currentSetIndex + 1,
+        weight_kg: data.weight_kg,
+        reps_completed: data.reps_completed,
+        rpe: data.rpe ?? null,
+        completed: data.completed,
+        notes: null,
+      });
+
+      // Track last weight for reference
+      setLastLoggedWeight(data.weight_kg);
+
+      // Close logger
+      setShowSetLogger(false);
+
+      // Check if this was the last set of the exercise
+      const totalSets = currentExercise.sets || 3;
+      const isLastSet = currentSetIndex + 1 >= totalSets;
+
+      if (isLastSet) {
+        // Check if workout is complete (last exercise)
+        if (currentIndex + 1 >= exercises.length) {
+          handleCompleteExercise(currentExercise.id);
+          setCurrentSetIndex(0);
+          setLastLoggedWeight(undefined);
+          setShowSummary(true);
+        } else {
+          // Show rest timer before transitioning to next exercise
+          pendingExerciseTransition.current = true;
+          setShowRestTimer(true);
+        }
+      } else {
+        // Show rest timer, then increment set
+        pendingExerciseTransition.current = false;
+        setShowRestTimer(true);
+      }
+    } catch (error) {
+      console.error('Failed to log set:', error);
+      Alert.alert('Error', 'No se pudo guardar el set. Intenta de nuevo.');
     }
-  }, [currentExercise, currentSetIndex, currentIndex, exercises.length, logSet, handleCompleteExercise]);
+  }, [currentExercise, currentSetIndex, currentIndex, exercises.length, isWorkoutInProgress, user?.id, todayWorkout?.id, handleCompleteExercise]);
 
   // Rest timer handlers
   const handleRestComplete = useCallback(() => {
     setShowRestTimer(false);
-    setCurrentSetIndex(prev => prev + 1);
-  }, []);
+
+    if (pendingExerciseTransition.current && currentExercise) {
+      // Transition to next exercise
+      handleCompleteExercise(currentExercise.id);
+      setCurrentSetIndex(0);
+      setLastLoggedWeight(undefined);
+      pendingExerciseTransition.current = false;
+    } else {
+      // Next set of same exercise
+      setCurrentSetIndex(prev => prev + 1);
+    }
+  }, [currentExercise, handleCompleteExercise]);
 
   const handleRestSkip = useCallback(() => {
-    setShowRestTimer(false);
-    setCurrentSetIndex(prev => prev + 1);
+    handleRestComplete();
+  }, [handleRestComplete]);
+
+  const handleRestExtend = useCallback((_seconds: number) => {
+    // RestTimer handles internally
   }, []);
 
-  const handleRestExtend = useCallback((seconds: number) => {
-    // RestTimer handles internally, just log if needed
-    console.log(`Extended rest by ${seconds}s`);
+  // Reset all workout state
+  const resetWorkoutState = useCallback(() => {
+    setElapsedSeconds(0);
+    setIsPaused(false);
+    setCurrentSetIndex(0);
+    setCompletedIds(new Set());
+    setCurrentIndex(0);
+    setLastLoggedWeight(undefined);
+    setShowSetLogger(false);
+    setShowRestTimer(false);
+    setShowSummary(false);
+    pendingExerciseTransition.current = false;
   }, []);
 
   // Workout summary handlers
   const handleSaveSummary = useCallback(async (data: WorkoutSummaryData) => {
-    await completeWorkout({
-      mood_after: data.mood_after,
-      notes: data.notes,
-    });
-    setShowSummary(false);
-    router.replace('/(tabs)');
-  }, [completeWorkout, router]);
+    try {
+      await useWorkoutStore.getState().completeWorkout({
+        mood_after: data.mood_after,
+        notes: data.notes,
+      });
+      resetWorkoutState();
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Failed to save summary:', error);
+      Alert.alert('Error', 'No se pudo guardar el resumen.');
+    }
+  }, [resetWorkoutState, router]);
 
   const handleCloseSummary = useCallback(() => {
-    setShowSummary(false);
+    resetWorkoutState();
     router.replace('/(tabs)');
-  }, [router]);
+  }, [resetWorkoutState, router]);
 
   // Calculate real stats from set logs
   const workoutStats = useMemo(() => {
@@ -189,6 +236,30 @@ export default function TrainScreen() {
       setsRemaining,
     };
   }, [setLogs, exercises]);
+
+  // Handle manual exercise selection - reset set tracking
+  const handleSelectExercise = useCallback((index: number) => {
+    setCurrentIndex(index);
+    setCurrentSetIndex(0);
+    setLastLoggedWeight(undefined);
+  }, []);
+
+  // Cleanup modals when navigating away
+  useEffect(() => {
+    return () => {
+      setShowSetLogger(false);
+      setShowRestTimer(false);
+      setShowSummary(false);
+    };
+  }, []);
+
+  // Reset timer when workout ends
+  useEffect(() => {
+    if (!isWorkoutInProgress && elapsedSeconds > 0) {
+      setElapsedSeconds(0);
+      setIsPaused(false);
+    }
+  }, [isWorkoutInProgress, elapsedSeconds]);
 
   // Format number helper
   const formatNumber = (num: number) => {
@@ -250,7 +321,7 @@ export default function TrainScreen() {
             <ChevronLeft size={20} color={colors.text} />
           </Pressable>
           <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>ACTIVE OPS</Text>
+            <Text style={styles.headerTitle}>SESIÓN ACTIVA</Text>
             <View style={styles.liveBadge}>
               <View style={styles.liveDot} />
               <Text style={styles.liveText}>EN VIVO</Text>
@@ -295,13 +366,13 @@ export default function TrainScreen() {
               <View style={styles.stat}>
                 <Zap size={16} color={colors.mint} />
                 <Text style={styles.statValue}>{formatNumber(workoutStats.totalVolume)}</Text>
-                <Text style={styles.statLabel}>kg vol</Text>
+                <Text style={styles.statLabel}>kg vol.</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.stat}>
                 <Timer size={16} color={colors.ngx} />
                 <Text style={styles.statValue}>{workoutStats.setsRemaining}</Text>
-                <Text style={styles.statLabel}>sets left</Text>
+                <Text style={styles.statLabel}>sets</Text>
               </View>
             </View>
           </GlassCard>
@@ -377,7 +448,7 @@ export default function TrainScreen() {
             const isCurrent = index === currentIndex;
 
             return (
-              <Pressable key={exercise.id} onPress={() => setCurrentIndex(index)}>
+              <Pressable key={exercise.id} onPress={() => handleSelectExercise(index)}>
                 <GlassCard
                   style={[
                     styles.exerciseCard,
@@ -461,7 +532,7 @@ export default function TrainScreen() {
         onSkip={handleRestSkip}
         onExtend={handleRestExtend}
         coachNote={currentExercise?.coaching_cues?.[0]}
-        nextExercise={exercises[currentIndex + 1]?.exercise_name}
+        nextExercise={currentIndex + 1 < exercises.length ? exercises[currentIndex + 1].exercise_name : undefined}
       />
 
       {/* Workout Summary */}

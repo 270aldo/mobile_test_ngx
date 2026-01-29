@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
-import type { User, Session } from '@supabase/supabase-js';
+import type { User, Session, Subscription } from '@supabase/supabase-js';
 
 interface AuthState {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
   isHydrated: boolean;
+  _authSubscription: Subscription | null;
 }
 
 export type ProfileUpdate = {
@@ -61,6 +62,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   session: null,
   isLoading: false,
   isHydrated: false,
+  _authSubscription: null,
 
   /**
    * Sign in with email and password
@@ -133,11 +135,30 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   signOut: async () => {
     set({ isLoading: true });
     try {
+      // Unsubscribe auth listener
+      const sub = get()._authSubscription;
+      if (sub) sub.unsubscribe();
+
       await supabase.auth.signOut();
+
+      // Reset all dependent stores to prevent data leaks
+      const { useProfileStore } = await import('./profile');
+      const { useSeasonStore } = await import('./season');
+      const { useChatStore } = await import('./chat');
+      const { useWorkoutStore } = await import('./workout');
+      const { useProgressStore } = await import('./progress');
+
+      useProfileStore.getState().reset();
+      useSeasonStore.getState().reset();
+      useChatStore.getState().reset();
+      useWorkoutStore.getState().reset();
+      useProgressStore.getState().reset();
+
       set({
         user: null,
         session: null,
         isLoading: false,
+        _authSubscription: null,
       });
     } catch (error) {
       console.error('Sign out error:', error);
@@ -151,20 +172,27 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
    */
   hydrate: async () => {
     try {
+      // Clean up existing subscription to prevent duplicates
+      const existing = get()._authSubscription;
+      if (existing) {
+        existing.unsubscribe();
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
+
+      // Set up auth state change listener and store reference
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        set({
+          user: session?.user ?? null,
+          session,
+        });
+      });
 
       set({
         user: session?.user ?? null,
         session,
         isHydrated: true,
-      });
-
-      // Set up auth state change listener
-      supabase.auth.onAuthStateChange((_event, session) => {
-        set({
-          user: session?.user ?? null,
-          session,
-        });
+        _authSubscription: subscription,
       });
     } catch (error) {
       console.error('Hydration error:', error);

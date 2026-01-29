@@ -36,6 +36,7 @@ export {
   useCurrentWeek,
   useCurrentPhase,
   useHasTodayWorkout,
+  useSeasonProgress,
 } from './season';
 
 // Workout store

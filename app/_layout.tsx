@@ -1,24 +1,65 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, Component, type ReactNode } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore, useIsHydrated, useIsAuthenticated } from '@/stores/auth';
 import { colors } from '@/constants/theme';
 
 SplashScreen.preventAutoHideAsync();
 
+/**
+ * Error Boundary to prevent white screen crashes
+ */
+class RootErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  state = { hasError: false, error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error('Root error boundary caught:', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={styles.loading}>
+          <Text style={styles.errorTitle}>Something went wrong</Text>
+          <Text style={styles.errorMessage}>{this.state.error?.message}</Text>
+          <StatusBar style="light" />
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function RootLayout() {
-  const hydrate = useAuthStore((s) => s.hydrate);
+  return (
+    <RootErrorBoundary>
+      <RootLayoutContent />
+    </RootErrorBoundary>
+  );
+}
+
+function RootLayoutContent() {
   const isHydrated = useIsHydrated();
+  const hasHydrated = useRef(false);
 
   useEffect(() => {
-    hydrate().finally(() => {
-      SplashScreen.hideAsync();
-    }).catch(() => {
+    // Prevent duplicate hydration calls
+    if (hasHydrated.current) return;
+    hasHydrated.current = true;
+
+    useAuthStore.getState().hydrate().finally(() => {
       SplashScreen.hideAsync();
     });
-  }, [hydrate]);
+  }, []);
 
   // DEV BYPASS: Skip hydration check to test UI
   const skipHydration = true;
@@ -87,5 +128,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
+  },
+  errorTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  errorMessage: {
+    color: colors.chrome,
+    fontSize: 13,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 });

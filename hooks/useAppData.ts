@@ -5,7 +5,7 @@
  * This is the main data loading hook for the app
  */
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useUser } from '@/stores';
 import { useProfileStore } from '@/stores/profile';
 import { useSeasonStore } from '@/stores/season';
@@ -14,28 +14,24 @@ import { useChatStore } from '@/stores/chat';
 
 export function useAppData() {
   const user = useUser();
-  const fetchProfile = useProfileStore((s) => s.fetchProfile);
-  const fetchSeasonAll = useSeasonStore((s) => s.fetchAll);
-  const fetchProgressAll = useProgressStore((s) => s.fetchAll);
-  const fetchMessages = useChatStore((s) => s.fetchMessages);
-  const subscribeToMessages = useChatStore((s) => s.subscribeToMessages);
-  const unsubscribe = useChatStore((s) => s.unsubscribe);
 
   useEffect(() => {
     if (!user?.id) return;
 
-    // Fetch all data
-    fetchProfile(user.id);
-    fetchSeasonAll(user.id);
-    fetchProgressAll(user.id);
-    fetchMessages(user.id);
+    const userId = user.id;
+
+    // Fetch all data via getState() to avoid stale closure deps
+    useProfileStore.getState().fetchProfile(userId);
+    useSeasonStore.getState().fetchAll(userId);
+    useProgressStore.getState().fetchAll(userId);
+    useChatStore.getState().fetchMessages(userId);
 
     // Subscribe to realtime messages
-    subscribeToMessages(user.id);
+    useChatStore.getState().subscribeToMessages(userId);
 
     // Cleanup on unmount
     return () => {
-      unsubscribe(user.id);
+      useChatStore.getState().unsubscribe(userId);
     };
   }, [user?.id]);
 }
@@ -43,23 +39,21 @@ export function useAppData() {
 /**
  * useRefreshData Hook
  *
- * Returns a function to refresh all app data
+ * Returns a memoized function to refresh all app data
  */
 export function useRefreshData() {
   const user = useUser();
-  const fetchProfile = useProfileStore((s) => s.fetchProfile);
-  const fetchSeasonAll = useSeasonStore((s) => s.fetchAll);
-  const fetchProgressAll = useProgressStore((s) => s.fetchAll);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!user?.id) return;
 
+    const userId = user.id;
     await Promise.all([
-      fetchProfile(user.id),
-      fetchSeasonAll(user.id),
-      fetchProgressAll(user.id),
+      useProfileStore.getState().fetchProfile(userId),
+      useSeasonStore.getState().fetchAll(userId),
+      useProgressStore.getState().fetchAll(userId),
     ]);
-  };
+  }, [user?.id]);
 
   return refresh;
 }

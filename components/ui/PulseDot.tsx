@@ -10,7 +10,7 @@ import Animated, {
 import { colors, animation } from '@/constants/theme';
 
 interface PulseDotProps {
-  color?: 'ngx' | 'mint';
+  color?: 'ngx' | 'mint' | 'warning';
   size?: number;
 }
 
@@ -41,14 +41,19 @@ export function PulseDot({ color = 'mint', size = 8 }: PulseDotProps) {
       -1,
       true
     );
-  }, []);
+  }, [scale, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: opacity.value,
   }));
 
-  const dotColor = color === 'mint' ? colors.mint : colors.ngx;
+  const colorMap = {
+    mint: colors.mint,
+    ngx: colors.ngx,
+    warning: colors.warning,
+  };
+  const dotColor = colorMap[color];
 
   return (
     <Animated.View

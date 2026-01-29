@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, ViewStyle, StyleProp, ImageSourcePropType, Pressable } from 'react-native';
+import { StyleSheet, View, ViewStyle, StyleProp, Platform, Pressable } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ImageSource } from 'expo-image';
@@ -15,7 +15,7 @@ interface GlassCardProps {
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | number;
   highlight?: boolean;
   variant?: CardVariant;
-  backgroundImage?: ImageSourcePropType | ImageSource | string;
+  backgroundImage?: ImageSource | string | number;
   backgroundOverlay?: OverlayType;
   backgroundOverlayOpacity?: number;
   onPress?: () => void;
@@ -79,7 +79,7 @@ export function GlassCard({
       {/* Optional Background Image with OptimizedImage */}
       {backgroundImage && (
         <OptimizedImage
-          source={backgroundImage as ImageSource}
+          source={backgroundImage}
           style={StyleSheet.absoluteFill}
           overlay={backgroundOverlay}
           overlayOpacity={backgroundOverlayOpacity}
@@ -87,36 +87,52 @@ export function GlassCard({
         />
       )}
 
-      <BlurView
-        intensity={intensity}
-        tint="dark"
-        style={[styles.blur, { padding: resolvedPadding }]}
-      >
-        {/* Top highlight line */}
-        {highlight && (
-          <LinearGradient
-            colors={highlightColors as [string, string, ...string[]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.highlight}
-          />
-        )}
-
-        {/* Hero gradient overlay */}
-        {variant === 'hero' && (
-          <LinearGradient
-            colors={['rgba(109, 0, 255, 0.15)', 'rgba(109, 0, 255, 0.05)', 'transparent']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-        )}
-
-        {/* Inner content */}
-        <View style={styles.content}>
-          {children}
+      {/* BlurView with Android fallback (BlurView may crash on some Android devices) */}
+      {Platform.OS === 'ios' ? (
+        <BlurView
+          intensity={intensity}
+          tint="dark"
+          style={[styles.blur, { padding: resolvedPadding }]}
+        >
+          {highlight && (
+            <LinearGradient
+              colors={highlightColors as [string, string, ...string[]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.highlight}
+            />
+          )}
+          {variant === 'hero' && (
+            <LinearGradient
+              colors={['rgba(109, 0, 255, 0.15)', 'rgba(109, 0, 255, 0.05)', 'transparent']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
+          <View style={styles.content}>{children}</View>
+        </BlurView>
+      ) : (
+        <View style={[styles.blur, styles.androidBlurFallback, { padding: resolvedPadding }]}>
+          {highlight && (
+            <LinearGradient
+              colors={highlightColors as [string, string, ...string[]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.highlight}
+            />
+          )}
+          {variant === 'hero' && (
+            <LinearGradient
+              colors={['rgba(109, 0, 255, 0.15)', 'rgba(109, 0, 255, 0.05)', 'transparent']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
+          <View style={styles.content}>{children}</View>
         </View>
-      </BlurView>
+      )}
 
       {/* Bottom inner shadow for depth */}
       <LinearGradient
@@ -195,6 +211,9 @@ const styles = StyleSheet.create({
   },
   blur: {
     flex: 1,
+  },
+  androidBlurFallback: {
+    backgroundColor: 'rgba(15, 15, 18, 0.92)',
   },
   content: {
     position: 'relative',

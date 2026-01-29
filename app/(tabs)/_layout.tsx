@@ -1,27 +1,16 @@
 import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { StyleSheet, Platform, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   Home,
-  Dumbbell,
-  MessageCircle,
-  TrendingUp,
+  BarChart3,
+  Camera,
+  Sparkles,
   User,
 } from 'lucide-react-native';
-import { colors, borderRadius, shadows, layout } from '@/constants/theme';
+import { colors } from '@/constants/theme';
 
-/**
- * TabLayout - NGX GENESIS HYBRID Tab Navigator
- *
- * Basado en: mobile_genesis_hybrid_v2_flow.html
- * .tab-bar {
- *   background: rgba(0, 0, 0, 0.8);
- *   border: 1px solid rgba(255, 255, 255, 0.1);
- *   border-radius: 38px;
- *   backdrop-filter: blur(16px);
- * }
- * .nav-btn.active { color: #6D00FF; filter: drop-shadow(0 0 8px rgba(109, 0, 255, 0.6)); }
- */
 export default function TabLayout() {
   return (
     <Tabs
@@ -29,12 +18,13 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.ngx,
         tabBarInactiveTintColor: colors.chrome,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: styles.tabLabel,
         tabBarStyle: styles.tabBar,
         tabBarBackground: () => (
           <View style={styles.tabBarBackground}>
             <BlurView
-              intensity={16}
+              intensity={20}
               tint="dark"
               style={StyleSheet.absoluteFill}
             />
@@ -44,9 +34,11 @@ export default function TabLayout() {
         tabBarItemStyle: styles.tabBarItem,
       }}
     >
+      {/* 1. INICIO (Home Hub) */}
       <Tabs.Screen
         name="index"
         options={{
+          title: 'Inicio',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.iconActive : undefined}>
               <Home size={22} color={color} />
@@ -54,44 +46,82 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="train"
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.iconActive : undefined}>
-              <Dumbbell size={22} color={color} />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.iconActive : undefined}>
-              <MessageCircle size={22} color={color} />
-            </View>
-          ),
-        }}
-      />
+
+      {/* 2. PROGRESO */}
       <Tabs.Screen
         name="progress"
         options={{
+          title: 'Progreso',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.iconActive : undefined}>
-              <TrendingUp size={22} color={color} />
+              <BarChart3 size={22} color={color} />
             </View>
           ),
         }}
       />
+
+      {/* 3. CAMERA (FAB Central) */}
+      <Tabs.Screen
+        name="camera"
+        options={{
+          title: '',
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.fabWrapper}>
+              <LinearGradient
+                colors={focused ? ['#8B2CF5', '#6D00FF'] : ['#6D00FF', '#4A00B0']}
+                style={styles.fab}
+              >
+                <Camera size={24} color="#FFFFFF" />
+              </LinearGradient>
+            </View>
+          ),
+        }}
+      />
+
+      {/* 4. GENESIS (Chat) */}
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'GENESIS',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? styles.genesisGlow : undefined}>
+              <Sparkles size={22} color={focused ? colors.ngx : color} />
+            </View>
+          ),
+        }}
+      />
+
+      {/* 5. PERFIL */}
       <Tabs.Screen
         name="profile"
         options={{
+          title: 'Perfil',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.iconActive : undefined}>
               <User size={22} color={color} />
             </View>
           ),
+        }}
+      />
+
+      {/* === HIDDEN TABS (accesibles via router.push desde Home) === */}
+      <Tabs.Screen
+        name="train"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
+      <Tabs.Screen
+        name="nourish"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="mind"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
@@ -101,32 +131,68 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    bottom: 18,
-    left: 20,
-    right: 20,
-    height: layout.tabBarHeight,
-    borderRadius: borderRadius['3xl'],
+    bottom: 20,
+    left: 16,
+    right: 16,
+    height: 70,
+    borderRadius: 35,
     borderTopWidth: 0,
     backgroundColor: 'transparent',
     elevation: 0,
-    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
   },
   tabBarBackground: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: borderRadius['3xl'],
+    borderRadius: 35,
     overflow: 'hidden',
   },
   tabBarOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.tabBarBg,
+    backgroundColor: 'rgba(5, 5, 10, 0.88)',
     borderWidth: 1,
-    borderColor: colors.tabBarBorder,
-    borderRadius: borderRadius['3xl'],
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 35,
   },
   tabBarItem: {
     paddingTop: Platform.OS === 'ios' ? 10 : 0,
   },
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    marginTop: 2,
+  },
   iconActive: {
-    ...shadows.tabActiveGlow,
+    shadowColor: colors.ngx,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 12,
+  },
+  genesisGlow: {
+    shadowColor: colors.ngx,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+  },
+  fabWrapper: {
+    position: 'absolute',
+    bottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#6D00FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });

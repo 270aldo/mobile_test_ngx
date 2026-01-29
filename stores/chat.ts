@@ -16,6 +16,7 @@ interface ChatState {
   isLoading: boolean;
   isSending: boolean;
   error: string | null;
+  _messageChannel: ReturnType<typeof import('@supabase/supabase-js').SupabaseClient.prototype.channel> | null;
 }
 
 interface ChatActions {
@@ -36,6 +37,7 @@ const initialState: ChatState = {
   isLoading: false,
   isSending: false,
   error: null,
+  _messageChannel: null,
 };
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -97,19 +99,32 @@ export const useChatStore = create<ChatStore>((set, get) => ({
    * Subscribe to realtime messages
    */
   subscribeToMessages: (userId: string) => {
-    chatApi.subscribeToMessages(userId, (message) => {
+    // Clean up existing channel first
+    const existing = get()._messageChannel;
+    if (existing) {
+      existing.unsubscribe();
+    }
+
+    const channel = chatApi.subscribeToMessages(userId, (message) => {
       set((state) => ({
         messages: [...state.messages, message],
         unreadCount: message.role !== 'user' ? state.unreadCount + 1 : state.unreadCount,
       }));
     });
+    set({ _messageChannel: channel });
   },
 
   /**
    * Unsubscribe from realtime messages
    */
   unsubscribe: (userId: string) => {
-    chatApi.unsubscribeFromMessages(userId);
+    const channel = get()._messageChannel;
+    if (channel) {
+      channel.unsubscribe();
+      set({ _messageChannel: null });
+    } else {
+      chatApi.unsubscribeFromMessages(userId);
+    }
   },
 
   /**

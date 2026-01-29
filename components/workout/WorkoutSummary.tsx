@@ -8,6 +8,7 @@ import {
   Pressable,
   Animated,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -78,36 +79,36 @@ export function WorkoutSummary({
   const slideAnim = useRef(new Animated.Value(50)).current;
   const confettiRef = useRef<ConfettiCannon>(null);
 
-  // Reset state and animate when modal becomes visible
+  // Reset state and animate when modal becomes visible (with cleanup)
   useEffect(() => {
-    if (visible) {
-      // Reset state
-      setMoodAfter(3);
-      setNotes('');
-      setShowConfetti(true);
-      setSaved(false);
-      fadeAnim.setValue(0);
-      slideAnim.setValue(50);
+    if (!visible) return;
 
-      // Entry animation
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 50,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    setMoodAfter(3);
+    setNotes('');
+    setShowConfetti(true);
+    setSaved(false);
+    fadeAnim.setValue(0);
+    slideAnim.setValue(50);
 
-      // Trigger haptic
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-  }, [visible]);
+    const animation = Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]);
+    animation.start();
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    return () => animation.stop();
+  }, [visible, fadeAnim, slideAnim]);
 
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -140,7 +141,7 @@ export function WorkoutSummary({
         <ConfettiCannon
           ref={confettiRef}
           count={150}
-          origin={{ x: 195, y: -20 }}
+          origin={{ x: Dimensions.get('window').width / 2, y: -20 }}
           fadeOut
           explosionSpeed={350}
           fallSpeed={3000}

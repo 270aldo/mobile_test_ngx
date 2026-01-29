@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,13 +19,15 @@ import {
   Dumbbell,
   Apple,
   Heart,
-  ChevronRight,
+  User,
 } from 'lucide-react-native';
-import { GlassCard, Label, PulseDot, EmptyState } from '@/components/ui';
-import { colors, spacing, typography, layout, borderRadius, touchTarget, avatarSizes } from '@/constants/theme';
+import { PulseDot, EmptyState } from '@/components/ui';
+import { CoachNoteMessage } from '@/components/chat';
+import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
 import { useUser } from '@/stores/auth';
 import { useChatStore, useMessages, useChatLoading } from '@/stores/chat';
 import { useProfile } from '@/stores/profile';
+import { useCoachNotes, useCoachNotesByLocation } from '@/hooks/useCoachNotes';
 
 const quickActions = [
   { id: 'workout', icon: Dumbbell, label: 'Mi workout', prompt: 'Cuéntame sobre mi workout de hoy' },
@@ -33,12 +35,30 @@ const quickActions = [
   { id: 'recovery', icon: Heart, label: 'Recovery', prompt: 'Dame tips de recovery para hoy' },
 ];
 
+// Mock coach data - TODO: Get from profile/settings
+const COACH_INFO = {
+  name: 'Diego',
+  whatsappNumber: '+521234567890',
+};
+
+/**
+ * ChatScreen - GENESIS Chat Interface
+ *
+ * Philosophy: GENESIS is the ONLY voice in the chat.
+ * Coach Notes appear as differentiated cards (mint).
+ * User responds to coach via WhatsApp (CTA in card).
+ * GENESIS contextualizes: "Basado en la nota de Diego, ajusté..."
+ */
 export default function ChatScreen() {
   const user = useUser();
   const profile = useProfile();
   const messages = useMessages();
   const isLoading = useChatLoading();
   const sendMessage = useChatStore((s) => s.sendMessage);
+
+  // Coach notes for chat location
+  const chatNotes = useCoachNotesByLocation('home'); // TODO: Add 'chat' location
+  const { dismiss: dismissNote } = useCoachNotes();
 
   const [inputText, setInputText] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
@@ -55,6 +75,21 @@ export default function ChatScreen() {
     return date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Format time ago
+  const formatTimeAgo = (dateString: string | null) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffHours < 1) return 'hace unos minutos';
+    if (diffHours < 24) return `hace ${diffHours}h`;
+    if (diffDays === 1) return 'ayer';
+    return `hace ${diffDays} días`;
+  };
+
   const handleSend = useCallback(async () => {
     if (!inputText.trim() || !user?.id) return;
 
@@ -67,6 +102,48 @@ export default function ChatScreen() {
   const handleQuickAction = (prompt: string) => {
     setInputText(prompt);
   };
+
+  // Combine messages with coach notes for unified timeline
+  const combinedMessages = useMemo(() => {
+    const items: Array<{
+      type: 'message' | 'coach_note' | 'genesis_context';
+      data: any;
+      timestamp: number;
+    }> = [];
+
+    // Add regular messages
+    messages.forEach((msg) => {
+      items.push({
+        type: 'message',
+        data: msg,
+        timestamp: msg.created_at ? new Date(msg.created_at).getTime() : 0,
+      });
+    });
+
+    // Add coach notes as special items
+    chatNotes.forEach((note) => {
+      items.push({
+        type: 'coach_note',
+        data: note,
+        timestamp: note.created_at ? new Date(note.created_at).getTime() : 0,
+      });
+
+      // Add GENESIS context message after coach note
+      if (note.cta_action) {
+        items.push({
+          type: 'genesis_context',
+          data: {
+            content: `Basado en la nota de ${COACH_INFO.name}, he actualizado tu plan. ${note.cta_text || 'Revisa los cambios.'}`,
+            noteId: note.id,
+          },
+          timestamp: (note.created_at ? new Date(note.created_at).getTime() : 0) + 1,
+        });
+      }
+    });
+
+    // Sort by timestamp
+    return items.sort((a, b) => a.timestamp - b.timestamp);
+  }, [messages, chatNotes]);
 
   return (
     <View style={styles.container}>
@@ -92,6 +169,16 @@ export default function ChatScreen() {
               </View>
             </View>
           </View>
+
+          {/* Coach indicator */}
+          {chatNotes.length > 0 && (
+            <View style={styles.coachIndicator}>
+              <User size={14} color={colors.mint} />
+              <Text style={styles.coachIndicatorText}>
+                {chatNotes.length} nota{chatNotes.length > 1 ? 's' : ''} del coach
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Quick Actions */}
@@ -119,9 +206,13 @@ export default function ChatScreen() {
             style={styles.messagesContainer}
             contentContainerStyle={styles.messagesContent}
             showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd()}
+            onContentSizeChange={() => {
+              requestAnimationFrame(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+              });
+            }}
           >
-            {messages.length === 0 ? (
+            {combinedMessages.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <EmptyState
                   type="messages"
@@ -130,7 +221,36 @@ export default function ChatScreen() {
                 />
               </View>
             ) : (
-              messages.map((message) => {
+              combinedMessages.map((item, index) => {
+                // Render coach note
+                if (item.type === 'coach_note') {
+                  return (
+                    <CoachNoteMessage
+                      key={`note-${item.data.id}`}
+                      coachName={COACH_INFO.name}
+                      content={item.data.content}
+                      timeAgo={formatTimeAgo(item.data.created_at)}
+                      whatsappNumber={COACH_INFO.whatsappNumber}
+                    />
+                  );
+                }
+
+                // Render GENESIS context message
+                if (item.type === 'genesis_context') {
+                  return (
+                    <View key={`context-${item.data.noteId}`} style={styles.messageRow}>
+                      <View style={styles.genesisAvatar}>
+                        <Sparkles size={14} color={colors.ngx} />
+                      </View>
+                      <View style={styles.contextBubble}>
+                        <Text style={styles.contextText}>{item.data.content}</Text>
+                      </View>
+                    </View>
+                  );
+                }
+
+                // Render regular message
+                const message = item.data;
                 const isUser = message.role === 'user';
                 const isGenesis = message.role === 'genesis';
                 const isCoach = message.role === 'coach';
@@ -238,7 +358,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: layout.contentPadding,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
@@ -274,6 +394,20 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: typography.fontSize.xs,
     color: colors.mint,
+  },
+  coachIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: 'rgba(0, 245, 170, 0.1)',
+    borderRadius: borderRadius.full,
+  },
+  coachIndicatorText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.mint,
+    fontWeight: typography.fontWeight.medium,
   },
 
   // Quick Actions
@@ -370,6 +504,25 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
+  // Context bubble (GENESIS response to coach note)
+  contextBubble: {
+    maxWidth: '75%',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: 'rgba(109, 0, 255, 0.08)',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(109, 0, 255, 0.15)',
+    borderLeftWidth: 3,
+    borderLeftColor: colors.ngx,
+  },
+  contextText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    fontStyle: 'italic',
+  },
+
   // Input
   inputContainer: {
     paddingHorizontal: layout.contentPadding,
@@ -449,24 +602,5 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  typingDots: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  typingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.textMuted,
-  },
-  typingDot1: {
-    opacity: 0.4,
-  },
-  typingDot2: {
-    opacity: 0.6,
-  },
-  typingDot3: {
-    opacity: 0.8,
   },
 });

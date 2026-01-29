@@ -60,11 +60,13 @@ export const useSeasonStore = create<SeasonStore>((set, get) => ({
    * Fetch today's workout
    */
   fetchTodayWorkout: async (userId: string) => {
+    if (!userId) return;
     try {
       const todayWorkout = await seasonApi.getTodayWorkout(userId);
       set({ todayWorkout });
     } catch (error) {
       console.error('Failed to fetch today workout:', error);
+      set({ error: error instanceof Error ? error.message : 'Failed to fetch today workout' });
     }
   },
 
@@ -72,11 +74,13 @@ export const useSeasonStore = create<SeasonStore>((set, get) => ({
    * Fetch current week's workouts
    */
   fetchWeekWorkouts: async (userId: string) => {
+    if (!userId) return;
     try {
       const weekWorkouts = await seasonApi.getCurrentWeekWorkouts(userId);
       set({ weekWorkouts });
     } catch (error) {
       console.error('Failed to fetch week workouts:', error);
+      set({ error: error instanceof Error ? error.message : 'Failed to fetch week workouts' });
     }
   },
 
@@ -124,3 +128,9 @@ export const useSeasonError = () => useSeasonStore((s) => s.error);
 export const useCurrentWeek = () => useSeasonStore((s) => s.activeSeason?.current_week ?? 1);
 export const useCurrentPhase = () => useSeasonStore((s) => s.activeSeason?.current_phase ?? 'foundation');
 export const useHasTodayWorkout = () => useSeasonStore((s) => s.todayWorkout !== null);
+export const useSeasonProgress = () => useSeasonStore((s) => ({
+  week: s.activeSeason?.current_week ?? 1,
+  totalWeeks: 12,
+  phase: s.activeSeason?.current_phase ?? 'foundation',
+  goal: s.activeSeason?.goal ?? '',
+}));

@@ -73,6 +73,10 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
    * Start a workout session
    */
   startWorkout: async (workoutId: string, userId: string) => {
+    if (!workoutId || !userId) {
+      set({ error: 'Missing workout or user ID' });
+      return;
+    }
     set({ isLoading: true, error: null });
 
     try {
@@ -153,8 +157,7 @@ export const useWorkoutInProgress = () => useWorkoutStore((s) => s.isInProgress)
 export const useWorkoutError = () => useWorkoutStore((s) => s.error);
 
 // Derived selectors
-// Empty array constant to avoid creating new reference
-const EMPTY_EXERCISE_BLOCKS: never[] = [];
+const EMPTY_EXERCISE_BLOCKS: ExerciseBlock[] = [];
 export const useExerciseBlocks = () => {
   const blocks = useWorkoutStore((s) => s.currentWorkout?.exercise_blocks);
   return blocks ?? EMPTY_EXERCISE_BLOCKS;

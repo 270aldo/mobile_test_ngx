@@ -57,27 +57,26 @@ export function RestTimer({
     }
   }, [visible, duration]);
 
-  // Countdown logic
+  // Countdown logic - removed `remaining` from deps to prevent interval recreation/drift
   useEffect(() => {
-    if (!visible || remaining <= 0) return;
+    if (!visible) return;
+
+    let completeTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const interval = setInterval(() => {
       setRemaining((prev) => {
         const next = prev - 1;
 
         if (next <= 0) {
-          // Timer complete
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          setTimeout(onComplete, 500);
+          completeTimeout = setTimeout(onComplete, 500);
           return 0;
         }
 
-        // Haptic feedback every 30s
         if (next % 30 === 0 && next > 0) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
-        // Warning at 10 seconds
         if (next === 10) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
@@ -86,32 +85,40 @@ export function RestTimer({
       });
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, [visible, remaining, onComplete]);
+    return () => {
+      clearInterval(interval);
+      if (completeTimeout) clearTimeout(completeTimeout);
+    };
+  }, [visible, onComplete]);
 
-  // Pulse animation when timer is low
+  // Pulse animation when timer is low - with proper cleanup
+  const isLow = remaining <= 10 && remaining > 0;
   useEffect(() => {
-    if (remaining <= 10 && remaining > 0) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
+    if (!isLow) {
       pulseAnim.setValue(1);
+      return;
     }
-  }, [remaining <= 10]);
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+
+    return () => animation.stop();
+  }, [isLow, pulseAnim]);
 
   const handleExtend = useCallback(() => {
     Haptics.selectionAsync();

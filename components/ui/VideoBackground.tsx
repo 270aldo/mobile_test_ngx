@@ -132,7 +132,7 @@ export function VideoBackground({
         isLooping={shouldLoop}
         isMuted={isMuted}
         onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-        onError={(error) => onError?.(error || 'Video playback error')}
+        onError={(error: string) => onError?.(typeof error === 'string' ? error : 'Video playback error')}
         // Performance optimizations
         useNativeControls={false}
         progressUpdateIntervalMillis={1000}
