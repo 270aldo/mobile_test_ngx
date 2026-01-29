@@ -33,13 +33,15 @@ npx expo start --web            # Web development
 - **React Native 0.81** + React 19
 - **Expo Router 6** (file-based routing)
 - **Zustand 5** for state management
-- **Supabase** for backend (auth + PostgreSQL, 14 migrations)
+- **Supabase** for backend (auth + PostgreSQL, 17 migrations)
 - **expo-secure-store** for token storage (never AsyncStorage for auth)
 - **react-native-reanimated 4** for animations
 - **react-native-gesture-handler** for gestures
 - **expo-av / expo-video** for media playback
 - **lucide-react-native** for icons
 - **expo-blur / expo-linear-gradient** for glassmorphism effects
+- **react-native-svg** for vector graphics
+- **react-native-confetti-cannon** for celebration animations
 
 ## Architecture
 
@@ -48,24 +50,28 @@ npx expo start --web            # Web development
 ```
 app/
 ├── (auth)/                    # Login/register (unauthenticated)
-├── (tabs)/                    # Main 5-tab navigation
+├── (tabs)/                    # Tab navigation
+│   ├── _layout.tsx            # Tab bar config (BlurView, FAB, hidden routes)
 │   ├── index.tsx              # Home — Daily Hub "Tu Dia"
+│   ├── progress/              # 4 views: Season, Week, Metrics, Photos
 │   ├── camera/                # Central camera (FAB) — SCAN, FORM, PHOTO modes
 │   ├── chat/                  # GENESIS chat + Coach Notes
-│   ├── train/                 # Workout (accessed from Home Hub)
-│   ├── progress/              # 4 views: Season, Week, Metrics, Photos
-│   └── profile/               # User profile
+│   ├── profile/               # User profile
+│   ├── train/                 # Workout (hidden, accessed from Home)
+│   ├── nourish/               # Nutrition dashboard (hidden, accessed from Home)
+│   ├── mind/                  # Mindfulness sessions (hidden, accessed from Home)
+│   └── video/                 # Video Hub (hidden, accessed programmatically)
 ├── (onboarding)/              # 14-step onboarding
 ├── (modals)/                  # Modal presentations
 ├── mindfulness/
-│   └── visualization.tsx      # Morning visualization (5 min guided)
+│   └── visualization.tsx      # Legacy visualization route
 └── nutrition/
-    ├── index.tsx              # Nutrition dashboard
+    ├── index.tsx              # Nutrition dashboard (alt route)
     ├── log.tsx                # Food logging (search, camera, barcode)
     └── supplements.tsx        # Supplement tracking
 ```
 
-**Navigation:** 5-tab bottom bar: Home, Progress, Camera (center FAB), Chat, Profile. Workout is NOT a tab — it's a module accessed from Home.
+**Navigation:** 5 visible tabs: Home, Progress, Camera (center FAB), Chat, Profile. Hidden tab routes (`href: null`): train, nourish, mind, video — accessed via `router.push()` from Home Hub or other screens.
 
 ### State Management (Zustand)
 
@@ -82,12 +88,14 @@ const { isLoading } = useAuthStore();
 **Stores:**
 | Store | Purpose |
 |-------|---------|
-| `auth.ts` | Authentication, session, user. Selectors: `useUser()`, `useSession()`, `useIsAuthenticated()`, `useIsHydrated()`, `useAuthLoading()` |
+| `auth.ts` | Authentication, session, user. Selectors: `useUser()`, `useSession()`, `useIsAuthenticated()`, `useIsHydrated()`, `useAuthLoading()`. Resets all dependent stores on sign-out. |
+| `profile.ts` | User profile data. Selectors: `useProfile()`, `useSubscription()`, `useOnboardingCompleted()` |
 | `season.ts` | Active season (12 weeks, 3 phases). Selectors: `useActiveSeason()`, `useTodayWorkout()`, `useSeasonProgress()` |
-| `workout.ts` | Active workout state, exercise tracking |
-| `chat.ts` | Chat messages, GENESIS responses |
-| `progress.ts` | Progress tracking data |
-| `profile.ts` | User profile data |
+| `workout.ts` | Active workout state, exercise tracking. Selectors: `useCurrentWorkout()`, `useWorkoutInProgress()` |
+| `chat.ts` | Chat messages, GENESIS responses. Selectors: `useMessages()`, `useUnreadCount()`, `useHasUnread()` |
+| `progress.ts` | Check-ins, streaks, badges, coach notes. Selectors: `useTodayCheckin()`, `useStreaks()`, `useBadges()` |
+| `nutrition.ts` | Daily meals and macro targets with Supabase persistence. Optimistic updates. Selectors: `useNutritionMeals()`, `useNutritionTargets()`, `useNutritionTotals()`, `useNutritionLoading()` |
+| `mindfulness.ts` | Session tracking and history with Supabase persistence. Selectors: `useHasCompletedMindfulnessToday()`, `useTodayMindfulnessSessions()`, `useMindfulnessHistory()` |
 
 ### Auth Flow
 
@@ -109,7 +117,7 @@ All tokens in `constants/theme.ts`:
 
 | Component | Purpose |
 |-----------|---------|
-| `GlassCard` | blur(12) container, variants: default, mint, ngx |
+| `GlassCard` | blur(12) container, variants: default, mint, ngx, hero |
 | `Button` | 7 variants: primary, secondary, mint, chip, ghost, coach, danger |
 | `Label` | 10px uppercase, letterSpacing: 3, color variants |
 | `StatusPill` | Status badge (active, rest, completed, upcoming) |
@@ -121,13 +129,15 @@ All tokens in `constants/theme.ts`:
 | `EmptyState` | Empty state display |
 | `ErrorState` | Error state display |
 | `LoadingState` | Loading spinner |
+| `OptimizedImage` | Performance-optimized image component |
+| `VideoBackground` | Video background for immersive screens |
 
 ### Component Modules
 
 ```
 components/
 ├── ui/              # Base design system (14 components)
-├── home/            # Daily Hub: DailyHubHeader, FitnessCard, NutritionCard, MindCard, QuickStats
+├── home/            # Daily Hub: DailyHubHeader, FitnessCard, NutritionCard, MindCard, QuickStats, QuickAccess
 ├── workout/         # Player: RestTimer, SetLogger, WorkoutSummary
 ├── progress/        # Views: SeasonView, WeekView, MetricsView, PhotosView, ViewSelector
 ├── nutrition/       # Tracking: MacroRing, MacroBar, MealCard, SupplementCard
@@ -141,14 +151,17 @@ components/
 
 ```
 services/
-├── api/             # REST API clients
-│   ├── base.ts      # Base HTTP client with auth headers
-│   ├── chat.ts      # Chat endpoints
-│   ├── coach.ts     # Coach assignment endpoints
-│   ├── profile.ts   # User profile endpoints
-│   ├── season.ts    # Season management endpoints
+├── api/             # Supabase API clients
+│   ├── base.ts      # Shared utilities: ApiError, handleQueryResult, getTodayDate
+│   ├── profile.ts   # User profile CRUD
+│   ├── season.ts    # Season management
 │   ├── workout.ts   # Workout endpoints
-│   └── checkin.ts   # Daily check-in endpoints
+│   ├── chat.ts      # Chat messages + realtime
+│   ├── checkin.ts   # Daily check-in endpoints
+│   ├── coach.ts     # Coach assignments + streaks (workout, checkin, hydration, mindfulness)
+│   ├── nutrition.ts # Food logs CRUD + macro targets (upsert)
+│   ├── mindfulness.ts # Session recording + history
+│   └── index.ts     # Re-exports all services
 └── elevenlabs.ts    # ElevenLabs TTS (placeholder for GENESIS voice)
 ```
 
@@ -161,9 +174,22 @@ services/
 
 At season end: Renew, Maintenance, Pause, or Graduate.
 
-### Supabase Schema (14 migrations)
+### Supabase Schema (17 migrations)
 
-Tables: `profiles`, `subscriptions`, `coach_assignments`, `seasons`, `workouts`, `exercise_blocks`, `workout_logs`, `set_logs`, `checkins`, `messages`, `coach_notes`, `badges`, `streaks` + trigger function for `updated_at`.
+Tables: `profiles`, `subscriptions`, `coach_assignments`, `seasons`, `workouts`, `exercise_blocks`, `workout_logs`, `set_logs`, `checkins`, `messages`, `coach_notes`, `badges`, `streaks`, `food_logs`, `nutrition_targets`, `mindfulness_sessions` + trigger function for `updated_at`.
+
+All tables use UUID primary keys, RLS policies on `auth.uid() = user_id`, and `updated_at` triggers. The `nutrition_targets` table has a `UNIQUE(user_id)` constraint for upsert. The `streaks` table supports types: `workout`, `checkin`, `hydration`, `mindfulness`.
+
+### Hooks
+
+```
+hooks/
+├── index.ts           # Re-exports
+├── useAppData.ts      # Fetches all store data on mount (profile, season, progress, chat, nutrition, mindfulness)
+└── useCoachNotes.ts   # Coach note filtering by location + dismiss logic
+```
+
+`useAppData()` is called from the Home Hub and fetches data from all stores via `getState()` to avoid stale closures. `useRefreshData()` returns a memoized function for pull-to-refresh.
 
 ### Path Aliases
 
@@ -188,24 +214,25 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
 
 ### Implemented
 
-- **Auth system** — Supabase auth with SecureStore, route guards
-- **Design system** — Glassmorphism components, dark-first, violet/mint palette
-- **Navigation** — 5-tab bar with central camera FAB, route groups
-- **Home Hub** — "Tu Dia" with FitnessCard, NutritionCard, MindCard, QuickStats, Coach Notes
+- **Auth system** — Supabase auth with SecureStore, route guards, store reset on sign-out
+- **Design system** — Glassmorphism components, dark-first, violet/mint palette (14 base UI components)
+- **Navigation** — 5 visible tabs + 4 hidden tab routes (train, nourish, mind, video), central camera FAB
+- **Home Hub** — "Tu Dia" with FitnessCard, NutritionCard, MindCard (auto-hides after completion), QuickStats, QuickAccess, Coach Notes
 - **Season model** — 12-week seasons with Zustand store and progress tracking
 - **Workout module** — RestTimer, SetLogger, WorkoutSummary, integrated with Home Hub
 - **Progress** — 4 selectable views: Season, Week, Metrics, Photos
-- **Nutrition** — Dashboard with MacroRing, MacroBar, MealCards; food log with search/camera/barcode; supplements with Coach Verified badges
+- **Nutrition (persisted)** — Dashboard with MacroRing, MacroBar, MealCards; food log with search/camera/barcode; supplements. Supabase persistence via `food_logs` and `nutrition_targets` tables. Optimistic updates with background sync.
+- **Mindfulness (persisted)** — 4 configurable sessions (Morning, Focus, Calm, Sleep) with VisualizationPlayer. Supabase persistence via `mindfulness_sessions` table. Auto-records on complete/skip. Streak tracking.
 - **Chat** — GENESIS messages + Coach Notes with WhatsApp CTA, combined timeline
 - **Camera** — 3 modes (SCAN, FORM, PHOTO) with mode-specific overlays, controls, recording timer
-- **Mindfulness** — Morning visualization player with 5 phases, breathing animation (Reanimated)
 - **Video ecosystem** — ExerciseDemo (15-30s loops), MicroLesson (60-90s), CoachVideo (coach messages)
-- **Services** — REST API layer, ElevenLabs placeholder
+- **Services** — 9 API services (profile, season, workout, chat, checkin, coach, nutrition, mindfulness) + ElevenLabs placeholder
+- **Data loading** — `useAppData()` hook fetches all stores on mount; `useRefreshData()` for pull-to-refresh
 
 ### Pending / Next Steps
 
 - **Onboarding flow** — 14-step onboarding screens with data collection
-- **Real Supabase data** — Connect UI to live database (currently using mock data)
+- **Remaining Supabase connections** — Season, workout, progress stores still use mock/partial data
 - **GENESIS AI integration** — LLM-powered workout programming and chat responses
 - **ElevenLabs integration** — Real voice synthesis for visualization sessions
 - **Camera permissions** — Actual expo-camera integration (currently placeholder UI)
@@ -214,3 +241,6 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
 - **Form check analysis** — Video-based technique analysis
 - **WhatsApp deep linking** — Coach communication CTA
 - **Offline support** — Cache workouts and content for offline use
+- **Pull-to-refresh** — Connect `useRefreshData()` to ScrollView RefreshControl
+- **Error UI** — Surface `useNutritionError()` / `useMindfulnessError()` via toast or ErrorState
+- **Onboarding nutrition seed** — Auto-create personalized macro targets from profile data
