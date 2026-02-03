@@ -73,10 +73,33 @@ export function handleQueryResultOrNull<T>(
 }
 
 /**
- * Get today's date in YYYY-MM-DD format
+ * Get local date in YYYY-MM-DD format
+ * (avoids UTC day rollover issues for streaks/logs)
+ */
+export function getLocalDateString(date: Date = new Date()): string {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().split('T')[0];
+}
+
+/**
+ * Get today's date in YYYY-MM-DD format (local)
  */
 export function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0];
+  return getLocalDateString();
+}
+
+/**
+ * Get start of week (Monday by default) in YYYY-MM-DD format (local)
+ */
+export function getWeekStartDate(
+  date: Date = new Date(),
+  weekStartsOn: 0 | 1 = 1
+): string {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 = Sunday
+  const diff = weekStartsOn === 1 ? (day === 0 ? -6 : 1 - day) : -day;
+  d.setDate(d.getDate() + diff);
+  return getLocalDateString(d);
 }
 
 /**

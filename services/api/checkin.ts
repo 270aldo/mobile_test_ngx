@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import { handleQueryResult, handleQueryResultOrNull, getTodayDate } from './base';
+import { handleQueryResult, handleQueryResultOrNull, getTodayDate, getWeekStartDate } from './base';
 import type { Checkin, TablesInsert, TablesUpdate } from '@/types';
 
 export const checkinApi = {
@@ -30,13 +30,8 @@ export const checkinApi = {
    * Get this week's weekly checkin
    */
   getWeeklyCheckin: async (userId: string): Promise<Checkin | null> => {
-    // Get start of current week (Monday)
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const monday = new Date(now);
-    monday.setDate(now.getDate() + mondayOffset);
-    const weekStart = monday.toISOString().split('T')[0];
+    // Get start of current week (Monday, local)
+    const weekStart = getWeekStartDate();
 
     const { data, error } = await supabase
       .from('checkins')

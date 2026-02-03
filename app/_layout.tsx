@@ -61,8 +61,8 @@ function RootLayoutContent() {
     });
   }, []);
 
-  // DEV BYPASS: Skip hydration check to test UI
-  const skipHydration = true;
+  // DEV BYPASS: Skip hydration check to test UI (only in dev + explicit flag)
+  const skipHydration = __DEV__ && process.env.EXPO_PUBLIC_DEV_BYPASS === 'true';
 
   if (!isHydrated && !skipHydration) {
     return (
@@ -82,8 +82,8 @@ function RootLayoutContent() {
 }
 
 function RootNavigator() {
-  // DEV BYPASS: Force show tabs for testing
-  const devBypass = true;
+  // DEV BYPASS: Force show tabs for testing (only in dev + explicit flag)
+  const devBypass = __DEV__ && process.env.EXPO_PUBLIC_DEV_BYPASS === 'true';
 
   // Real authentication flow
   const isLoggedIn = devBypass || useIsAuthenticated();

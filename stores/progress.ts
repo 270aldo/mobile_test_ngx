@@ -8,6 +8,7 @@
 
 import { create } from 'zustand';
 import { checkinApi, coachApi } from '@/services/api';
+import { getTodayDate } from '@/services/api/base';
 import type { Checkin, Streak, Badge, CoachNote } from '@/types';
 
 interface ProgressState {
@@ -166,7 +167,7 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
     try {
       const weeklyCheckin = await checkinApi.upsertWeeklyCheckin(userId, {
         ...data,
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayDate(),
       });
       set({ weeklyCheckin, isLoading: false });
 

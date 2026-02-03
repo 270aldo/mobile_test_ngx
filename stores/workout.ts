@@ -99,7 +99,9 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
    */
   logSet: async (setData) => {
     const { currentWorkoutLog } = get();
-    if (!currentWorkoutLog) return;
+    if (!currentWorkoutLog) {
+      throw new Error('Workout not started');
+    }
 
     try {
       const setLog = await workoutApi.logSet({
@@ -111,6 +113,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       }));
     } catch (error) {
       console.error('Failed to log set:', error);
+      throw error;
     }
   },
 

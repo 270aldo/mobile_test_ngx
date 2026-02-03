@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import { handleQueryResult, handleQueryResultOrNull } from './base';
+import { getLocalDateString, getTodayDate, handleQueryResult, handleQueryResultOrNull } from './base';
 import type { CoachAssignment, CoachNote, Badge, Streak } from '@/types';
 
 export const coachApi = {
@@ -122,7 +122,7 @@ export const coachApi = {
     userId: string,
     streakType: 'workout' | 'checkin' | 'hydration' | 'mindfulness'
   ): Promise<Streak> => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDate();
     const existingStreak = await coachApi.getStreak(userId, streakType);
 
     if (existingStreak) {
@@ -134,7 +134,7 @@ export const coachApi = {
       // Check if streak continues (yesterday or earlier today)
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const yesterdayStr = getLocalDateString(yesterday);
 
       const continuesStreak = existingStreak.last_activity_date === yesterdayStr;
       const newCount = continuesStreak ? (existingStreak.current_count ?? 0) + 1 : 1;
