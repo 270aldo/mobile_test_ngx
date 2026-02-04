@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { StyleSheet, ScrollView, Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
   DailyHubHeader,
@@ -11,7 +11,7 @@ import {
   QuickStats,
   QuickAccess,
 } from '@/components/home';
-import { CoachNoteCard } from '@/components/ui';
+import { CoachNoteCard, ScreenBackground } from '@/components/ui';
 import { useUser } from '@/stores/auth';
 import { useProfile } from '@/stores/profile';
 import { useActiveSeason, useTodayWorkout, useWeekWorkouts } from '@/stores/season';
@@ -20,6 +20,8 @@ import { useHasCompletedMindfulnessToday } from '@/stores/mindfulness';
 import { useAppData } from '@/hooks';
 import { useCoachNotesByLocation, useCoachNotes } from '@/hooks/useCoachNotes';
 import { colors, spacing, layout } from '@/constants/theme';
+import { getTodayDate } from '@/services/api/base';
+import { isCoachCtaRoute } from '@/constants/routes';
 
 /**
  * HomeScreen - "Tu Día" Hub
@@ -39,11 +41,12 @@ export default function HomeScreen() {
   const router = useRouter();
   const user = useUser();
 
-  // Local state for dismissing mind card
+  // Local state for dismissing mind card (persisted per day)
   const [mindDismissed, setMindDismissed] = useState(false);
 
   // Local state for water tracking
   const [waterGlasses, setWaterGlasses] = useState(0);
+  const waterHydrated = useRef(false);
 
   // Fetch all app data on mount
   useAppData();
@@ -58,6 +61,73 @@ export default function HomeScreen() {
   const homeNotes = useCoachNotesByLocation('home');
   const mindfulnessCompleted = useHasCompletedMindfulnessToday();
   const { dismiss: dismissNote } = useCoachNotes();
+
+  const handleCtaPress = (route: string | null | undefined) => {
+    if (route && isCoachCtaRoute(route)) {
+      router.push(route as any);
+    }
+  };
+
+  const todayKey = `@mind_card_dismissed_${getTodayDate()}`;
+  const waterKey = `@water_glasses_${getTodayDate()}`;
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadDismissed = async () => {
+      const value =
+        Platform.OS === 'web'
+          ? (typeof localStorage !== 'undefined' ? localStorage.getItem(todayKey) : null)
+          : await SecureStore.getItemAsync(todayKey);
+      if (isMounted) {
+        setMindDismissed(value === 'true');
+      }
+    };
+    loadDismissed();
+    return () => {
+      isMounted = false;
+    };
+  }, [todayKey]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadWater = async () => {
+      const value =
+        Platform.OS === 'web'
+          ? (typeof localStorage !== 'undefined' ? localStorage.getItem(waterKey) : null)
+          : await SecureStore.getItemAsync(waterKey);
+      const parsed = value ? Number(value) : 0;
+      if (isMounted) {
+        setWaterGlasses(Number.isFinite(parsed) ? parsed : 0);
+        waterHydrated.current = true;
+      }
+    };
+    loadWater();
+    return () => {
+      isMounted = false;
+    };
+  }, [waterKey]);
+
+  useEffect(() => {
+    if (!waterHydrated.current) return;
+    if (Platform.OS === 'web') {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(waterKey, String(waterGlasses));
+      }
+      return;
+    }
+    SecureStore.setItemAsync(waterKey, String(waterGlasses));
+  }, [waterGlasses, waterKey]);
+
+  const handleDismissMindCard = async () => {
+    setMindDismissed(true);
+    if (Platform.OS === 'web') {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(todayKey, 'true');
+      }
+      return;
+    }
+    await SecureStore.setItemAsync(todayKey, 'true');
+  };
 
   // Display name from profile or email fallback
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Atleta';
@@ -86,22 +156,7 @@ export default function HomeScreen() {
   const showMindCard = isMorning && !mindDismissed && !mindfulnessCompleted;
 
   return (
-    <View style={styles.container}>
-      {/* Premium gradient background */}
-      <LinearGradient
-        colors={['#0A0A0F', '#0D0B14', '#050505']}
-        locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Subtle radial glow */}
-      <View style={styles.glowContainer}>
-        <LinearGradient
-          colors={['rgba(109, 0, 255, 0.08)', 'transparent']}
-          style={styles.glow}
-        />
-      </View>
-
+    <ScreenBackground glowColors={['rgba(109, 0, 255, 0.08)', 'transparent']}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
           style={styles.scrollView}
@@ -127,11 +182,14 @@ export default function HomeScreen() {
               content={note.content ?? ''}
               priority={(['info', 'action', 'celebration'].includes(note.priority ?? '') ? note.priority as 'info' | 'action' | 'celebration' : 'info')}
               ctaText={note.cta_text ?? undefined}
-              onCtaPress={note.cta_action ? () => router.push(note.cta_action as any) : undefined}
+              onCtaPress={note.cta_action ? () => handleCtaPress(note.cta_action) : undefined}
               onDismiss={() => dismissNote(note.id)}
               testID={`coach-note-${note.id}`}
             />
           ))}
+
+          {/* Quick Focus - Primary modules */}
+          <QuickAccess testID="quick-access" />
 
           {/* 2. Mind Card - Morning visualization (dismissable) */}
           {showMindCard && (
@@ -139,7 +197,7 @@ export default function HomeScreen() {
               sessionTitle="Visualización Matutina"
               duration={5}
               completed={false}
-              onDismiss={() => setMindDismissed(true)}
+              onDismiss={handleDismissMindCard}
               testID="mind-card"
             />
           )}
@@ -174,32 +232,13 @@ export default function HomeScreen() {
             onRemoveWater={() => setWaterGlasses((prev) => Math.max(prev - 1, 0))}
             testID="quick-stats"
           />
-
-          {/* 6. Quick Access - Always visible module navigation */}
-          <QuickAccess testID="quick-access" />
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.void,
-  },
-  glowContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 400,
-  },
-  glow: {
-    flex: 1,
-    borderBottomLeftRadius: 200,
-    borderBottomRightRadius: 200,
-  },
   safeArea: {
     flex: 1,
   },

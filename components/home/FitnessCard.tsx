@@ -106,7 +106,7 @@ export function FitnessCard({
             <View style={styles.iconContainer}>
               <Dumbbell size={18} color={colors.ngx} />
             </View>
-            <Label color="ngx">ENTRENAMIENTO</Label>
+            <Label color="ngx">WORKOUT</Label>
           </View>
           <ChevronRight size={18} color={colors.textMuted} />
         </View>
@@ -149,7 +149,7 @@ export function FitnessCard({
           testID="start-workout-cta"
         >
           <Play size={16} color={colors.text} style={{ marginRight: 6 }} />
-          {status === 'in_progress' ? 'Continuar' : 'Empezar Workout'}
+          {status === 'in_progress' ? 'Continue' : 'Start Workout'}
         </Button>
       </GlassCard>
     </Pressable>

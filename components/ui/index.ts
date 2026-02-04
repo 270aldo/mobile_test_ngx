@@ -15,6 +15,7 @@ export { ErrorState } from './ErrorState';
 export { ProgressRing } from './ProgressRing';
 export { StatCard } from './StatCard';
 export { CoachNoteCard } from './CoachNoteCard';
+export { ScreenBackground } from './ScreenBackground';
 
 // Media Components
 export { OptimizedImage, blurhashes } from './OptimizedImage';

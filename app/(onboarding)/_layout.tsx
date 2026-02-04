@@ -13,21 +13,21 @@ export default function OnboardingLayout() {
     >
       <Stack.Screen name="index" />
       {/* Onboarding screens will be added here */}
-      {/* The 14-step onboarding flow will include:
-          1. Welcome
-          2. Goal Selection
-          3. Experience Level
-          4. Body Metrics
-          5. Workout Frequency
-          6. Available Equipment
-          7. Time Availability
-          8. Injuries/Limitations
-          9. Nutrition Preferences
-          10. Sleep Schedule
-          11. Coach Introduction
-          12. AI Calibration
-          13. Subscription Selection
-          14. Setup Complete
+      {/* El flujo de 14 pasos incluye:
+          1. Bienvenida
+          2. Objetivo principal
+          3. Experiencia
+          4. Métricas corporales
+          5. Frecuencia de entrenamiento
+          6. Equipamiento disponible
+          7. Tiempo por sesión
+          8. Lesiones/limitaciones
+          9. Preferencias nutricionales
+          10. Horario de sueño
+          11. Introducción del coach
+          12. Calibración de IA
+          13. Selección de plan
+          14. Configuración completa
       */}
     </Stack>
   );

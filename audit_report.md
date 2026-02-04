@@ -1,6 +1,6 @@
 # Auditoría del proyecto — NGX GENESIS
 
-Fecha: 2026-02-03
+Fecha: 2026-02-04
 
 ## Resumen ejecutivo (dónde estamos parados)
 
@@ -50,40 +50,61 @@ Reportes relacionados:
 
 **P1-001 — Permisos de micrófono solicitados al montar Camera**
 
-- **Evidencia:** `app/(tabs)/camera/index.tsx:80`.
-- **Impacto UX:** “permission surprise”, fricción y potencial rechazo (usuarios no entienden por qué pide mic al abrir cámara si solo quieren foto/scan).
-- **Acción recomendada:** pedir mic solo al entrar en modo FORM o al iniciar grabación; mostrar rationale.
+- **Estado:** **Resuelto** (ahora se solicita al iniciar grabación en FORM).
+- **Evidencia:** `app/(tabs)/camera/index.tsx:180`.
 
 **P1-002 — Coach notes en Chat usando location incorrecta**
 
-- **Evidencia:** `app/(tabs)/chat/index.tsx:60` usa `useCoachNotesByLocation('home')`.
-- **Impacto:** notas aparecen/contabilizan mal; ruido en “GENESIS chat”.
-- **Acción recomendada:** soportar location `chat` y filtrar adecuadamente.
+- **Estado:** **Resuelto** (location `chat`).
+- **Evidencia:** `app/(tabs)/chat/index.tsx:60`.
 
 **P1-003 — Inconsistencia de idioma (ES/EN)**
 
-- **Evidencia:** onboarding y auth tienen copy en inglés (`app/(onboarding)/index.tsx:14`, `app/(auth)/login.tsx:82`).
-- **Impacto:** percepción “no terminado” + fricción en mercado hispanohablante.
-- **Acción recomendada:** decidir idioma base + preparar i18n (aunque sea simple al inicio).
+- **Estado:** **Resuelto** (auth + onboarding en ES).
+- **Evidencia:** `app/(onboarding)/index.tsx:14`, `app/(auth)/login.tsx:82`, `app/(auth)/register.tsx:94`.
 
 **P1-004 — Persistencia de “dismiss” y hábitos**
 
-- **Evidencia:** Home “mindDismissed” es estado local (`app/(tabs)/index.tsx:43`).
-- **Impacto:** tarjetas que el usuario “dismiss” pueden reaparecer; rompe sensación de control.
-- **Acción recomendada:** persistir “dismiss por día” (store + fecha local).
+- **Estado:** **Resuelto** (persistencia diaria para Mind Card y agua).
+- **Evidencia:** `app/(tabs)/index.tsx:44`.
 
 ### P2 (mejoras estructurales / mantenibilidad)
 
 **P2-001 — Duplicación de backgrounds/gradients por pantalla**
 
-- **Impacto:** cambios visuales cuestan más; riesgo de inconsistencias.
-- **Acción recomendada:** extraer `ScreenBackground` (gradient + glow) y parametrizar.
+- **Estado:** **Resuelto** (`ScreenBackground` reutilizable aplicado en múltiples pantallas).
+- **Evidencia:** `components/ui/ScreenBackground.tsx:1`, `app/(tabs)/index.tsx:1`, `app/(tabs)/progress/index.tsx:1`, `app/(tabs)/chat/index.tsx:1`, `app/(tabs)/train/index.tsx:1`, `app/(tabs)/profile/index.tsx:1`, `app/(tabs)/video/index.tsx:1`, `app/(tabs)/mind/index.tsx:1`, `app/(tabs)/nourish/index.tsx:1`, `app/nutrition/log.tsx:1`, `app/nutrition/supplements.tsx:1`, `app/(onboarding)/index.tsx:1`, `app/(auth)/register.tsx:1`.
 
-**P2-002 — Typed Routes vs `as any`**
+**P2-002 — Dismiss de Mind Card no persistente**
+
+- **Estado:** **Resuelto** (persistido por día).
+- **Evidencia:** `app/(tabs)/index.tsx:45`.
+
+**P2-003 — Agua diaria no persistente**
+
+- **Estado:** **Resuelto** (persistido por día).
+- **Evidencia:** `app/(tabs)/index.tsx:66`.
+
+**P2-004 — Allowlist de CTAs dispersa**
+
+- **Estado:** **Resuelto** (centralizada).
+- **Evidencia:** `constants/routes.ts:1`, `app/(tabs)/index.tsx:21`.
+
+**P2-005 — Typed Routes vs `as any`**
 
 - **Evidencia:** `app/(tabs)/index.tsx:130`.
 - **Impacto:** perdemos beneficios de typed routes; aumentan bugs de navegación.
 - **Acción recomendada:** centralizar rutas (const) y evitar “server-driven route strings”.
+
+**P2-006 — Home “Focus” y segmentación de módulos**
+
+- **Estado:** **Resuelto** (segmentos Train/Nourish/Mind + acceso a Video Library).
+- **Evidencia:** `components/home/QuickAccess.tsx:1`, `app/(tabs)/index.tsx:191`.
+
+**P2-007 — Workout Player v2 (contexto y cues)**
+
+- **Estado:** **Resuelto** (targets, cues, demo, progreso por sets y “Up Next”).
+- **Evidencia:** `app/(tabs)/train/index.tsx:382`, `components/workout/SetLogger.tsx:140`.
 
 ---
 

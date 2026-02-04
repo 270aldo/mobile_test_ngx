@@ -7,7 +7,6 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
   useSharedValue,
@@ -29,6 +28,7 @@ import {
 } from 'expo-camera';
 import * as Linking from 'expo-linking';
 import { CameraModeOverlay, CameraControls } from '@/components/camera';
+import { ScreenBackground } from '@/components/ui';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
 
 type AppCameraMode = 'SCAN' | 'FORM' | 'PHOTO';
@@ -76,13 +76,6 @@ export default function CameraScreen() {
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingTimeRef = useRef(0);
   const barcodeScanCooldown = useRef(false);
-
-  // Request microphone on mount for video recording
-  useEffect(() => {
-    if (!micPermission?.granted) {
-      requestMicPermission();
-    }
-  }, [micPermission?.granted, requestMicPermission]);
 
   // Keep ref in sync with state for use in callbacks
   useEffect(() => {
@@ -175,6 +168,21 @@ export default function CameraScreen() {
     if (!cameraRef.current) return;
 
     if (activeMode === 'FORM') {
+      if (!micPermission?.granted) {
+        const permission = await requestMicPermission();
+        if (!permission?.granted) {
+          Alert.alert(
+            'Micrófono requerido',
+            'Activa el micrófono para grabar tu técnica.',
+            [
+              permission && !permission.canAskAgain
+                ? { text: 'Abrir configuración', onPress: () => Linking.openSettings() }
+                : { text: 'OK' },
+            ]
+          );
+          return;
+        }
+      }
       if (isRecording) {
         // Stop recording
         cameraRef.current.stopRecording();
@@ -227,7 +235,7 @@ export default function CameraScreen() {
       }
     }
     // SCAN mode: handled by onBarcodeScanned callback
-  }, [activeMode, isRecording, router]);
+  }, [activeMode, isRecording, micPermission?.granted, requestMicPermission, router]);
 
   const handleFlashToggle = () => {
     setFlashEnabled(!flashEnabled);
@@ -277,12 +285,7 @@ export default function CameraScreen() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <View style={styles.container}>
-        <LinearGradient
-          colors={['#0A0A0F', '#050505']}
-          style={StyleSheet.absoluteFill}
-        />
-
+      <ScreenBackground gradientColors={['#0A0A0F', '#050505']} gradientLocations={[0, 1]}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           {/* Header */}
           <View style={styles.header}>
@@ -420,7 +423,7 @@ export default function CameraScreen() {
             ← Desliza para cambiar modo →
           </Text>
         </SafeAreaView>
-      </View>
+      </ScreenBackground>
     </GestureHandlerRootView>
   );
 }

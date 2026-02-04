@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as SecureStore from 'expo-secure-store';
 import {
   ViewSelector,
@@ -11,6 +10,7 @@ import {
   PhotosView,
   type ProgressView,
 } from '@/components/progress';
+import { ScreenBackground } from '@/components/ui';
 import { colors, spacing, typography, layout } from '@/constants/theme';
 import { useProfile } from '@/stores/profile';
 import { useActiveSeason, useWeekWorkouts } from '@/stores/season';
@@ -170,22 +170,7 @@ export default function ProgressScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Premium gradient background */}
-      <LinearGradient
-        colors={['#0A0A0F', '#0D0B14', '#050505']}
-        locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Glow */}
-      <View style={styles.glowContainer}>
-        <LinearGradient
-          colors={['rgba(0, 245, 170, 0.06)', 'transparent']}
-          style={styles.glow}
-        />
-      </View>
-
+    <ScreenBackground glowColors={['rgba(0, 245, 170, 0.06)', 'transparent']}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
@@ -216,27 +201,11 @@ export default function ProgressScreen() {
           {renderContent()}
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.void,
-  },
-  glowContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 400,
-  },
-  glow: {
-    flex: 1,
-    borderBottomLeftRadius: 200,
-    borderBottomRightRadius: 200,
-  },
   safeArea: {
     flex: 1,
   },

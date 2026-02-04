@@ -9,10 +9,9 @@ import {
   Alert,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, User } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Input, GlassCard } from '@/components/ui';
+import { Button, Input, GlassCard, ScreenBackground } from '@/components/ui';
 import { useAuthStore, useAuthLoading } from '@/stores/auth';
 import { colors, spacing, typography } from '@/constants/theme';
 
@@ -35,25 +34,25 @@ export default function RegisterScreen() {
     const newErrors: typeof errors = {};
 
     if (!fullName.trim()) {
-      newErrors.fullName = 'Name is required';
+      newErrors.fullName = 'El nombre es obligatorio';
     }
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'El correo es obligatorio';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Enter a valid email';
+      newErrors.email = 'Ingresa un correo válido';
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'La contraseña es obligatoria';
     } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
     }
 
     if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = 'Confirma tu contraseña';
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'Las contraseñas no coinciden';
     }
 
     setErrors(newErrors);
@@ -65,21 +64,18 @@ export default function RegisterScreen() {
 
     const { error } = await signUp(email, password, fullName);
     if (error) {
-      Alert.alert('Registration Failed', error.message);
+      Alert.alert('Error de registro', error.message);
     } else {
       Alert.alert(
-        'Check Your Email',
-        'We sent you a confirmation link. Please check your email to complete registration.',
+        'Revisa tu correo',
+        'Te enviamos un enlace de confirmación. Revisa tu correo para completar el registro.',
         [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
       );
     }
   };
 
   return (
-    <LinearGradient
-      colors={[colors.background, colors.surface]}
-      style={styles.container}
-    >
+    <ScreenBackground gradientColors={[colors.background, colors.surface]}>
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -93,17 +89,17 @@ export default function RegisterScreen() {
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.logo}>NGX</Text>
-              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.title}>Crear cuenta</Text>
               <Text style={styles.subtitle}>
-                Start your transformation today
+                Empieza tu transformación hoy
               </Text>
             </View>
 
             {/* Form */}
             <GlassCard style={styles.form} padding="lg">
               <Input
-                label="Full Name"
-                placeholder="Enter your name"
+                label="Nombre completo"
+                placeholder="Ingresa tu nombre"
                 autoCapitalize="words"
                 autoComplete="name"
                 value={fullName}
@@ -114,8 +110,8 @@ export default function RegisterScreen() {
               />
 
               <Input
-                label="Email"
-                placeholder="Enter your email"
+                label="Correo"
+                placeholder="Ingresa tu correo"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
@@ -127,8 +123,8 @@ export default function RegisterScreen() {
               />
 
               <Input
-                label="Password"
-                placeholder="Create a password"
+                label="Contraseña"
+                placeholder="Crea una contraseña"
                 secureTextEntry
                 autoComplete="new-password"
                 value={password}
@@ -139,8 +135,8 @@ export default function RegisterScreen() {
               />
 
               <Input
-                label="Confirm Password"
-                placeholder="Confirm your password"
+                label="Confirmar contraseña"
+                placeholder="Confirma tu contraseña"
                 secureTextEntry
                 autoComplete="new-password"
                 value={confirmPassword}
@@ -156,30 +152,27 @@ export default function RegisterScreen() {
                 fullWidth
                 testID="register-submit-button"
               >
-                Create Account
+                Crear cuenta
               </Button>
             </GlassCard>
 
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                Already have an account?{' '}
+                ¿Ya tienes cuenta?{' '}
                 <Link href="/(auth)/login" style={styles.link}>
-                  Sign in
+                  Inicia sesión
                 </Link>
               </Text>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </LinearGradient>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   safeArea: {
     flex: 1,
   },

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import {
   ChevronLeft,
@@ -13,7 +12,7 @@ import {
   Plus,
   Apple,
 } from 'lucide-react-native';
-import { GlassCard, Button, Label } from '@/components/ui';
+import { GlassCard, Button, Label, ScreenBackground } from '@/components/ui';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
 import { useNutritionStore, type MealType } from '@/stores/nutrition';
 import { useUser } from '@/stores';
@@ -81,7 +80,7 @@ export default function NutritionLogScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground>
       <Stack.Screen
         options={{
           headerShown: true,
@@ -94,12 +93,6 @@ export default function NutritionLogScreen() {
             </Button>
           ),
         }}
-      />
-
-      <LinearGradient
-        colors={['#0A0A0F', '#0D0B14', '#050505']}
-        locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -231,15 +224,11 @@ export default function NutritionLogScreen() {
           </GlassCard>
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.void,
-  },
   safeArea: {
     flex: 1,
   },

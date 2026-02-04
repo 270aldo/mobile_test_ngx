@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Sparkles } from 'lucide-react-native';
-import { Button, GlassCard, Input } from '@/components/ui';
+import { Button, GlassCard, Input, ScreenBackground } from '@/components/ui';
 import { colors, spacing, typography } from '@/constants/theme';
 import { useAuthStore, type ProfileUpdate } from '@/stores/auth';
 import { router } from 'expo-router';
@@ -11,20 +10,20 @@ import { router } from 'expo-router';
 const TOTAL_STEPS = 14;
 
 const STEP_TITLES = [
-  'Welcome to NGX GENESIS',
-  'Choose Your Primary Goal',
-  'Training Experience',
-  'Body Metrics',
-  'Weekly Frequency',
-  'Available Equipment',
-  'Time Availability',
-  'Injuries & Limitations',
-  'Nutrition Preference',
-  'Sleep Schedule',
-  'Meet Your Coach',
-  'GENESIS Calibration',
-  'Select Your Plan',
-  'Setup Complete',
+  'Bienvenido a NGX GENESIS',
+  'Elige tu objetivo principal',
+  'Experiencia de entrenamiento',
+  'Métricas corporales',
+  'Frecuencia semanal',
+  'Equipamiento disponible',
+  'Tiempo disponible',
+  'Lesiones y limitaciones',
+  'Preferencia nutricional',
+  'Horario de sueño',
+  'Conoce a tu coach',
+  'Calibración de GENESIS',
+  'Elige tu plan',
+  'Configuración completa',
 ] as const;
 
 type StepCopy = {
@@ -34,72 +33,72 @@ type StepCopy = {
 
 const STEP_COPY: Record<number, StepCopy> = {
   1: {
-    subtitle: "Let's personalize your training experience. This takes about 5 minutes.",
-    cta: 'Get Started',
+    subtitle: 'Vamos a personalizar tu entrenamiento. Esto toma unos 5 minutos.',
+    cta: 'Comenzar',
   },
   2: {
-    subtitle: 'Pick your top priority so we can tailor your program.',
-    cta: 'Continue',
+    subtitle: 'Elige tu prioridad para ajustar tu programa.',
+    cta: 'Continuar',
   },
   3: {
-    subtitle: 'Tell us your training background so we can calibrate intensity.',
-    cta: 'Continue',
+    subtitle: 'Cuéntanos tu experiencia para calibrar la intensidad.',
+    cta: 'Continuar',
   },
   4: {
-    subtitle: 'We use basic metrics to personalize training loads.',
-    cta: 'Continue',
+    subtitle: 'Usamos métricas básicas para personalizar cargas.',
+    cta: 'Continuar',
   },
   5: {
-    subtitle: 'How many days per week can you train?',
-    cta: 'Continue',
+    subtitle: '¿Cuántos días por semana puedes entrenar?',
+    cta: 'Continuar',
   },
   6: {
-    subtitle: 'Select the equipment you have access to.',
-    cta: 'Continue',
+    subtitle: 'Selecciona el equipo al que tienes acceso.',
+    cta: 'Continuar',
   },
   7: {
-    subtitle: 'How much time can you dedicate per session?',
-    cta: 'Continue',
+    subtitle: '¿Cuánto tiempo puedes dedicar por sesión?',
+    cta: 'Continuar',
   },
   8: {
-    subtitle: 'Let us know about any injuries or limitations.',
-    cta: 'Continue',
+    subtitle: 'Cuéntanos sobre lesiones o limitaciones.',
+    cta: 'Continuar',
   },
   9: {
-    subtitle: 'Choose a nutrition approach that fits your lifestyle.',
-    cta: 'Continue',
+    subtitle: 'Elige un enfoque nutricional que se adapte a ti.',
+    cta: 'Continuar',
   },
   10: {
-    subtitle: 'Your sleep routine helps us manage recovery.',
-    cta: 'Continue',
+    subtitle: 'Tu sueño nos ayuda a gestionar la recuperación.',
+    cta: 'Continuar',
   },
   11: {
-    subtitle: 'We will match you with a coach based on your goals.',
-    cta: 'Continue',
+    subtitle: 'Te asignaremos un coach según tus objetivos.',
+    cta: 'Continuar',
   },
   12: {
-    subtitle: 'GENESIS is calibrating your program.',
-    cta: 'Continue',
+    subtitle: 'GENESIS está calibrando tu programa.',
+    cta: 'Continuar',
   },
   13: {
-    subtitle: 'Select the plan that unlocks your transformation.',
-    cta: 'Continue',
+    subtitle: 'Elige el plan que potencia tu transformación.',
+    cta: 'Continuar',
   },
   14: {
-    subtitle: 'You are ready to start. Let’s build your season.',
-    cta: 'Enter App',
+    subtitle: 'Estás listo. Empecemos tu temporada.',
+    cta: 'Entrar a la app',
   },
 };
 
 const STEP_OPTIONS: Record<number, string[]> = {
-  2: ['Strength & Size', 'Athletic Performance', 'Longevity & Health', 'Body Recomp'],
-  3: ['Beginner', 'Intermediate', 'Advanced', 'Athlete'],
-  5: ['2-3 days', '4 days', '5 days', '6+ days'],
-  6: ['Full Gym', 'Dumbbells Only', 'Bands & Bodyweight', 'Minimal Equipment'],
+  2: ['Fuerza y tamaño', 'Rendimiento atlético', 'Longevidad y salud', 'Recomposición corporal'],
+  3: ['Principiante', 'Intermedio', 'Avanzado', 'Atleta'],
+  5: ['2-3 días', '4 días', '5 días', '6+ días'],
+  6: ['Gimnasio completo', 'Solo mancuernas', 'Bandas y peso corporal', 'Equipo mínimo'],
   7: ['30 min', '45 min', '60 min', '75+ min'],
-  9: ['Balanced', 'High Protein', 'Low Carb', 'Plant Based'],
-  10: ['Before 10pm', '10pm - 12am', 'After Midnight', 'Irregular'],
-  13: ['Core', 'Elite', 'Coach + AI', 'Undecided'],
+  9: ['Balanceada', 'Alta en proteína', 'Baja en carbos', 'Basada en plantas'],
+  10: ['Antes de 10pm', '10pm - 12am', 'Después de medianoche', 'Irregular'],
+  13: ['Core', 'Elite', 'Coach + AI', 'Indeciso'],
 };
 
 export default function OnboardingFlow() {
@@ -125,24 +124,24 @@ export default function OnboardingFlow() {
 
   const buildProfileUpdates = (): ProfileUpdate => {
     const goalMap: Record<string, ProfileUpdate['goal']> = {
-      'Strength & Size': 'muscle',
-      'Athletic Performance': 'performance',
-      'Longevity & Health': 'longevity',
-      'Body Recomp': 'hybrid',
+      'Fuerza y tamaño': 'muscle',
+      'Rendimiento atlético': 'performance',
+      'Longevidad y salud': 'longevity',
+      'Recomposición corporal': 'hybrid',
     };
 
     const experienceMap: Record<string, ProfileUpdate['experience_level']> = {
-      Beginner: 'beginner',
-      Intermediate: 'intermediate',
-      Advanced: 'advanced',
-      Athlete: 'advanced',
+      Principiante: 'beginner',
+      Intermedio: 'intermediate',
+      Avanzado: 'advanced',
+      Atleta: 'advanced',
     };
 
     const trainingDaysMap: Record<string, number> = {
-      '2-3 days': 3,
-      '4 days': 4,
-      '5 days': 5,
-      '6+ days': 6,
+      '2-3 días': 3,
+      '4 días': 4,
+      '5 días': 5,
+      '6+ días': 6,
     };
 
     const durationMap: Record<string, number> = {
@@ -153,23 +152,23 @@ export default function OnboardingFlow() {
     };
 
     const equipmentMap: Record<string, ProfileUpdate['equipment_access']> = {
-      'Full Gym': 'gym',
-      'Dumbbells Only': 'home',
-      'Bands & Bodyweight': 'home',
-      'Minimal Equipment': 'home',
+      'Gimnasio completo': 'gym',
+      'Solo mancuernas': 'home',
+      'Bandas y peso corporal': 'home',
+      'Equipo mínimo': 'home',
     };
 
     const activityMap: Record<string, ProfileUpdate['activity_level']> = {
-      '2-3 days': 'light',
-      '4 days': 'moderate',
-      '5 days': 'active',
-      '6+ days': 'active',
+      '2-3 días': 'light',
+      '4 días': 'moderate',
+      '5 días': 'active',
+      '6+ días': 'active',
     };
 
     const genderMap: Record<string, ProfileUpdate['gender']> = {
-      Male: 'male',
-      Female: 'female',
-      Other: 'other',
+      Hombre: 'male',
+      Mujer: 'female',
+      Otro: 'other',
     };
 
     const parsedAge = Number(metrics.age);
@@ -224,14 +223,11 @@ export default function OnboardingFlow() {
   const progress = (step / TOTAL_STEPS) * 100;
 
   return (
-    <LinearGradient
-      colors={[colors.background, colors.surface]}
-      style={styles.container}
-    >
+    <ScreenBackground gradientColors={[colors.background, colors.surface]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.stepLabel}>{`STEP ${step} / ${TOTAL_STEPS}`}</Text>
+            <Text style={styles.stepLabel}>{`PASO ${step} / ${TOTAL_STEPS}`}</Text>
             <Text style={styles.title}>{STEP_TITLES[step - 1]}</Text>
             <Text style={styles.subtitle}>{currentCopy.subtitle}</Text>
           </View>
@@ -248,8 +244,8 @@ export default function OnboardingFlow() {
           {step === 4 ? (
             <GlassCard style={styles.infoCard} padding="lg">
               <Input
-                label="Age"
-                placeholder="e.g. 32"
+                label="Edad"
+                placeholder="ej. 32"
                 keyboardType="number-pad"
                 value={metrics.age}
                 onChangeText={(value) =>
@@ -260,8 +256,8 @@ export default function OnboardingFlow() {
               <View style={styles.metricsRow}>
                 <View style={styles.metricColumn}>
                   <Input
-                    label="Height (cm)"
-                    placeholder="e.g. 178"
+                    label="Estatura (cm)"
+                    placeholder="ej. 178"
                     keyboardType="number-pad"
                     value={metrics.heightCm}
                     onChangeText={(value) =>
@@ -273,8 +269,8 @@ export default function OnboardingFlow() {
                 </View>
                 <View style={styles.metricColumn}>
                   <Input
-                    label="Weight (kg)"
-                    placeholder="e.g. 82"
+                    label="Peso (kg)"
+                    placeholder="ej. 82"
                     keyboardType="number-pad"
                     value={metrics.weightKg}
                     onChangeText={(value) =>
@@ -285,9 +281,9 @@ export default function OnboardingFlow() {
                   />
                 </View>
               </View>
-              <Text style={styles.sectionLabel}>Gender</Text>
+              <Text style={styles.sectionLabel}>Género</Text>
               <View style={styles.inlineOptions}>
-                {['Male', 'Female', 'Other'].map((option) => (
+                {['Hombre', 'Mujer', 'Otro'].map((option) => (
                   <Pressable
                     key={option}
                     onPress={() =>
@@ -314,13 +310,13 @@ export default function OnboardingFlow() {
             </GlassCard>
           ) : step === 8 ? (
             <GlassCard style={styles.infoCard} padding="lg">
-              <Text style={styles.infoTitle}>Injuries or limitations</Text>
+              <Text style={styles.infoTitle}>Lesiones o limitaciones</Text>
               <Text style={styles.infoText}>
-                List anything we should consider. Separate with commas.
+                Indica lo que debamos considerar. Separa con comas.
               </Text>
               <Input
-                label="Limitations"
-                placeholder="e.g. knee pain, shoulder impingement"
+                label="Limitaciones"
+                placeholder="ej. dolor de rodilla, hombro"
                 value={metrics.limitations}
                 onChangeText={(value) =>
                   setMetrics((prev) => ({ ...prev, limitations: value }))
@@ -393,14 +389,11 @@ export default function OnboardingFlow() {
           </Text>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   safeArea: {
     flex: 1,
   },

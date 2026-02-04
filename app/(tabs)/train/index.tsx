@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
   ChevronLeft,
@@ -14,7 +13,7 @@ import {
   ChevronRight,
   Zap,
 } from 'lucide-react-native';
-import { GlassCard, Button, StatusPill, ProgressRing, EmptyState } from '@/components/ui';
+import { GlassCard, Button, StatusPill, ProgressRing, EmptyState, ScreenBackground } from '@/components/ui';
 import { SetLogger, RestTimer, WorkoutSummary } from '@/components/workout';
 import type { SetLogData, WorkoutSummaryData } from '@/components/workout';
 import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
@@ -78,6 +77,16 @@ export default function TrainScreen() {
 
   // Current exercise (defined early for use in handlers)
   const currentExercise = exercises[currentIndex] as ExerciseBlock | undefined;
+  const nextExercise = exercises[currentIndex + 1] as ExerciseBlock | undefined;
+  const loggedSetsByExercise = useMemo(() => {
+    return setLogs.reduce<Record<string, number>>((acc, log) => {
+      const id = log.exercise_block_id;
+      if (id) {
+        acc[id] = (acc[id] ?? 0) + 1;
+      }
+      return acc;
+    }, {});
+  }, [setLogs]);
 
   // Track whether we're transitioning between exercises (last set completed)
   const pendingExerciseTransition = useRef(false);
@@ -225,7 +234,7 @@ export default function TrainScreen() {
 
     // Sets remaining calculation
     const totalExpectedSets = exercises.reduce((sum, ex) => sum + (ex.sets || 3), 0);
-    const setsRemaining = totalExpectedSets - totalSets;
+    const setsRemaining = Math.max(0, totalExpectedSets - totalSets);
 
     return {
       totalSets,
@@ -243,6 +252,21 @@ export default function TrainScreen() {
     setCurrentSetIndex(0);
     setLastLoggedWeight(undefined);
   }, []);
+
+  const handleFinishSession = useCallback(() => {
+    if (workoutStats.setsRemaining > 0) {
+      Alert.alert(
+        'Finalizar sesión',
+        `Te quedan ${workoutStats.setsRemaining} sets. ¿Quieres finalizar?`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Finalizar', style: 'destructive', onPress: () => setShowSummary(true) },
+        ]
+      );
+      return;
+    }
+    setShowSummary(true);
+  }, [workoutStats.setsRemaining]);
 
   // Cleanup modals when navigating away
   useEffect(() => {
@@ -272,20 +296,17 @@ export default function TrainScreen() {
   // If loading or no workout
   if (isLoading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={colors.ngx} />
-      </View>
+      <ScreenBackground>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.ngx} />
+        </View>
+      </ScreenBackground>
     );
   }
 
   if (!todayWorkout) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={['#0A0A0F', '#0D0B14', '#050505']}
-          locations={[0, 0.4, 1]}
-          style={StyleSheet.absoluteFill}
-        />
+      <ScreenBackground>
         <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', padding: spacing.xl }]}>
           <EmptyState
             type="workouts"
@@ -293,27 +314,12 @@ export default function TrainScreen() {
             message="Descansa hoy y vuelve mañana más fuerte"
           />
         </SafeAreaView>
-      </View>
+      </ScreenBackground>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Premium gradient background */}
-      <LinearGradient
-        colors={['#0A0A0F', '#0D0B14', '#050505']}
-        locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Subtle glow */}
-      <View style={styles.glowContainer}>
-        <LinearGradient
-          colors={['rgba(109, 0, 255, 0.1)', 'transparent']}
-          style={styles.glow}
-        />
-      </View>
-
+    <ScreenBackground glowColors={['rgba(109, 0, 255, 0.1)', 'transparent']}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
@@ -397,6 +403,39 @@ export default function TrainScreen() {
                 <StatusPill>{`Set ${currentSetIndex + 1}/${currentExercise.sets || 3}`}</StatusPill>
               </View>
 
+              <View style={styles.exerciseMetaRow}>
+              <Text style={styles.exerciseMetaText}>
+                {currentExercise.sets || 3} sets • {currentExercise.reps || '8-12'} reps
+              </Text>
+              <Text style={styles.exerciseMetaDivider}>•</Text>
+              <Text style={styles.exerciseMetaText}>
+                Rest {currentExercise.rest_seconds || 90}s
+              </Text>
+                {currentExercise.tempo && (
+                  <>
+                    <Text style={styles.exerciseMetaDivider}>•</Text>
+                    <Text style={styles.exerciseMetaText}>Tempo {currentExercise.tempo}</Text>
+                  </>
+              )}
+              {typeof loggedSetsByExercise[currentExercise.id] === 'number' && (
+                <>
+                  <Text style={styles.exerciseMetaDivider}>•</Text>
+                  <Text style={styles.exerciseMetaText}>
+                    {loggedSetsByExercise[currentExercise.id]}/{currentExercise.sets || 3} sets
+                  </Text>
+                </>
+              )}
+            </View>
+
+              {(currentExercise.coaching_cues?.length || currentExercise.notes) && (
+                <View style={styles.coachTip}>
+                  <Text style={styles.coachTipLabel}>Coach Tip</Text>
+                  <Text style={styles.coachTipText}>
+                    {currentExercise.coaching_cues?.[0] ?? currentExercise.notes}
+                  </Text>
+                </View>
+              )}
+
               {/* Set Progress */}
               <View style={styles.setProgress}>
                 {Array.from({ length: currentExercise.sets || 3 }, (_, i) => (
@@ -437,6 +476,16 @@ export default function TrainScreen() {
             </GlassCard>
           )}
 
+          {nextExercise && (
+            <GlassCard variant="elevated" style={styles.nextExerciseCard}>
+              <Text style={styles.nextExerciseLabel}>Up Next</Text>
+              <Text style={styles.nextExerciseName}>{nextExercise.exercise_name}</Text>
+              <Text style={styles.nextExerciseMeta}>
+                {nextExercise.sets || 3} x {nextExercise.reps || '8-12'} • Rest {nextExercise.rest_seconds || 90}s
+              </Text>
+            </GlassCard>
+          )}
+
           {/* Exercise List */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Todos los Ejercicios</Text>
@@ -473,17 +522,17 @@ export default function TrainScreen() {
                     </View>
 
                     {/* Info */}
-                    <View style={styles.exerciseDetails}>
-                      <Text style={[
-                        styles.exerciseName,
-                        isCompleted && styles.exerciseNameComplete,
-                      ]}>
-                        {exercise.exercise_name}
-                      </Text>
-                      <Text style={styles.exerciseMeta}>
-                        {exercise.sets || 3} x {exercise.reps || '8-12'} @ {exercise.weight_prescription || 'RPE 7-8'}
-                      </Text>
-                    </View>
+                  <View style={styles.exerciseDetails}>
+                    <Text style={[
+                      styles.exerciseName,
+                      isCompleted && styles.exerciseNameComplete,
+                    ]}>
+                      {exercise.exercise_name}
+                    </Text>
+                    <Text style={styles.exerciseMeta}>
+                      {exercise.sets || 3} x {exercise.reps || '8-12'} @ {exercise.weight_prescription || 'RPE 7-8'} • {loggedSetsByExercise[exercise.id] ?? 0}/{exercise.sets || 3} sets
+                    </Text>
+                  </View>
 
                     {/* Right */}
                     {isCurrent ? (
@@ -500,7 +549,7 @@ export default function TrainScreen() {
           {/* Finish Button */}
           <Button
             variant="mint"
-            onPress={() => setShowSummary(true)}
+            onPress={handleFinishSession}
             fullWidth
             style={styles.finishButton}
           >
@@ -521,6 +570,11 @@ export default function TrainScreen() {
           lastWeight={lastLoggedWeight}
           targetReps={currentExercise.reps || '8-12'}
           recommendedRpe={8}
+          coachingCues={currentExercise.coaching_cues ?? []}
+          tempo={currentExercise.tempo}
+          restSeconds={currentExercise.rest_seconds}
+          weightPrescription={currentExercise.weight_prescription}
+          videoUrl={currentExercise.video_url}
         />
       )}
 
@@ -551,26 +605,15 @@ export default function TrainScreen() {
         onSave={handleSaveSummary}
         onClose={handleCloseSummary}
       />
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  centered: {
     flex: 1,
-    backgroundColor: colors.void,
-  },
-  glowContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 350,
-  },
-  glow: {
-    flex: 1,
-    borderBottomLeftRadius: 200,
-    borderBottomRightRadius: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   safeArea: {
     flex: 1,
@@ -748,6 +791,44 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  exerciseMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  exerciseMetaText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
+  },
+  exerciseMetaDivider: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
+  },
+  coachTip: {
+    backgroundColor: 'rgba(109, 0, 255, 0.12)',
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(109, 0, 255, 0.25)',
+  },
+  coachTipLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.ngx,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  coachTipText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
   setProgress: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -794,6 +875,27 @@ const styles = StyleSheet.create({
   exerciseCardCurrent: {
     borderColor: 'rgba(109, 0, 255, 0.4)',
     borderWidth: 1,
+  },
+  nextExerciseCard: {
+    marginBottom: spacing.sm,
+  },
+  nextExerciseLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    marginBottom: spacing.xs,
+  },
+  nextExerciseName: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  nextExerciseMeta: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
   },
   exerciseRow: {
     flexDirection: 'row',

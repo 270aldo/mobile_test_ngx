@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Plus, ScanLine } from 'lucide-react-native';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
-import { GlassCard, Button } from '@/components/ui';
+import { GlassCard, Button, ScreenBackground } from '@/components/ui';
 import { MacroRing, MacroBar, MealCard } from '@/components/nutrition';
 import { useNutritionMeals, useNutritionTargets, useNutritionTotals } from '@/stores/nutrition';
 
@@ -18,19 +17,7 @@ export default function NourishScreen() {
     const current = useMemo(() => totals, [totals]);
 
     return (
-        <View style={styles.container}>
-            <LinearGradient
-                colors={['#0A0A0F', '#0D0B14', '#050505']}
-                locations={[0, 0.4, 1]}
-                style={StyleSheet.absoluteFill}
-            />
-            <View style={styles.glowContainer}>
-                <LinearGradient
-                    colors={['rgba(0, 245, 170, 0.08)', 'transparent']}
-                    style={styles.glow}
-                />
-            </View>
-
+        <ScreenBackground glowColors={['rgba(0, 245, 170, 0.08)', 'transparent']}>
             <SafeAreaView style={styles.safeArea} edges={['top']}>
                 <ScrollView
                     style={styles.scrollView}
@@ -130,29 +117,13 @@ export default function NourishScreen() {
                     />
                 </ScrollView>
             </SafeAreaView>
-        </View>
+        </ScreenBackground>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.void,
-    },
     safeArea: {
         flex: 1,
-    },
-    glowContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 400,
-    },
-    glow: {
-        flex: 1,
-        borderBottomLeftRadius: 200,
-        borderBottomRightRadius: 200,
     },
     scrollView: {
         flex: 1,

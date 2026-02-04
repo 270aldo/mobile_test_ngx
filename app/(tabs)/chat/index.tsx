@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   Sparkles,
   Send,
@@ -21,7 +20,7 @@ import {
   Heart,
   User,
 } from 'lucide-react-native';
-import { PulseDot, EmptyState } from '@/components/ui';
+import { PulseDot, EmptyState, ScreenBackground } from '@/components/ui';
 import { CoachNoteMessage } from '@/components/chat';
 import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
 import { useUser } from '@/stores/auth';
@@ -57,7 +56,7 @@ export default function ChatScreen() {
   const sendMessage = useChatStore((s) => s.sendMessage);
 
   // Coach notes for chat location
-  const chatNotes = useCoachNotesByLocation('home'); // TODO: Add 'chat' location
+  const chatNotes = useCoachNotesByLocation('chat');
   const { dismiss: dismissNote } = useCoachNotes();
 
   const [inputText, setInputText] = useState('');
@@ -146,14 +145,7 @@ export default function ChatScreen() {
   }, [messages, chatNotes]);
 
   return (
-    <View style={styles.container}>
-      {/* Premium gradient background */}
-      <LinearGradient
-        colors={['#0A0A0F', '#0D0B14', '#050505']}
-        locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-
+    <ScreenBackground>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
@@ -341,15 +333,11 @@ export default function ChatScreen() {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.void,
-  },
   safeArea: {
     flex: 1,
   },

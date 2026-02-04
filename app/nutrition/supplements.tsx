@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import {
   ChevronLeft,
@@ -12,7 +11,7 @@ import {
   AlertCircle,
   Info,
 } from 'lucide-react-native';
-import { GlassCard, Button, Label, PulseDot } from '@/components/ui';
+import { GlassCard, Button, Label, PulseDot, ScreenBackground } from '@/components/ui';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
 
 type SupplementStatus = 'verified' | 'pending' | 'suggested';
@@ -77,7 +76,7 @@ const MOCK_SUPPLEMENTS: Supplement[] = [
 ];
 
 const STATUS_CONFIG: Record<SupplementStatus, { label: string; color: string; icon: typeof ShieldCheck }> = {
-  verified: { label: 'Coach Verified', color: colors.mint, icon: ShieldCheck },
+  verified: { label: 'Verificado por coach', color: colors.mint, icon: ShieldCheck },
   pending: { label: 'Pendiente', color: colors.warning, icon: Clock },
   suggested: { label: 'Sugerido', color: colors.ngx, icon: Info },
 };
@@ -105,7 +104,7 @@ export default function SupplementsScreen() {
   const takenToday = supplements.filter((s) => s.taken).length;
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground>
       <Stack.Screen
         options={{
           headerShown: true,
@@ -123,12 +122,6 @@ export default function SupplementsScreen() {
             </Pressable>
           ),
         }}
-      />
-
-      <LinearGradient
-        colors={['#0A0A0F', '#0D0B14', '#050505']}
-        locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -176,10 +169,10 @@ export default function SupplementsScreen() {
           <GlassCard style={styles.infoCard}>
             <View style={styles.infoHeader}>
               <ShieldCheck size={16} color={colors.mint} />
-              <Text style={styles.infoTitle}>Coach Verified</Text>
+              <Text style={styles.infoTitle}>Verificado por coach</Text>
             </View>
             <Text style={styles.infoText}>
-              Los suplementos marcados como "Coach Verified" han sido revisados y
+              Los suplementos marcados como "Verificado por coach" han sido revisados y
               aprobados por tu coach basándose en tus objetivos y condiciones.
             </Text>
           </GlassCard>
@@ -267,15 +260,11 @@ export default function SupplementsScreen() {
           </Text>
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.void,
-  },
   headerButton: {
     padding: spacing.sm,
   },

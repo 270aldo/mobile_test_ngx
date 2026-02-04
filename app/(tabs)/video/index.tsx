@@ -1,9 +1,8 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Video, Dumbbell, MessageCircle, Play } from 'lucide-react-native';
-import { GlassCard, Button, Label } from '@/components/ui';
+import { GlassCard, Button, Label, ScreenBackground } from '@/components/ui';
 import { CoachVideo, ExerciseDemo } from '@/components/video';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
 
@@ -24,19 +23,7 @@ export default function VideoHubScreen() {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={['#0A0A0F', '#0D0B14', '#050505']}
-        locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.glowContainer}>
-        <LinearGradient
-          colors={['rgba(109, 0, 255, 0.1)', 'transparent']}
-          style={styles.glow}
-        />
-      </View>
-
+    <ScreenBackground glowColors={['rgba(109, 0, 255, 0.1)', 'transparent']} glowHeight={300}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
           style={styles.scrollView}
@@ -119,29 +106,13 @@ export default function VideoHubScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.void,
-  },
   safeArea: {
     flex: 1,
-  },
-  glowContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-  },
-  glow: {
-    flex: 1,
-    borderBottomLeftRadius: 200,
-    borderBottomRightRadius: 200,
   },
   scrollView: {
     flex: 1,

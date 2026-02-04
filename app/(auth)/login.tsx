@@ -7,13 +7,11 @@ import {
   Platform,
   ScrollView,
   Alert,
-  ImageBackground,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Input, GlassCard } from '@/components/ui';
+import { Button, Input, GlassCard, ScreenBackground } from '@/components/ui';
 import { useAuthStore, useAuthLoading } from '@/stores/auth';
 import { colors, spacing, typography } from '@/constants/theme';
 
@@ -29,15 +27,15 @@ export default function LoginScreen() {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'El correo es obligatorio';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Enter a valid email';
+      newErrors.email = 'Ingresa un correo válido';
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'La contraseña es obligatoria';
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
     }
 
     setErrors(newErrors);
@@ -49,23 +47,16 @@ export default function LoginScreen() {
 
     const { error } = await signIn(email, password);
     if (error) {
-      Alert.alert('Login Failed', error.message);
+      Alert.alert('Error de inicio de sesión', error.message);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <ImageBackground
-        source={require('@/assets/ngx_recovery_light.png')}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-      >
-        <LinearGradient
-          colors={['rgba(5, 5, 5, 0.7)', colors.void]}
-          style={StyleSheet.absoluteFill}
-        />
-      </ImageBackground>
-
+    <ScreenBackground
+      backgroundImage={require('@/assets/ngx_recovery_light.png')}
+      gradientColors={['rgba(5, 5, 5, 0.7)', colors.void]}
+      gradientLocations={[0, 1]}
+    >
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -79,17 +70,17 @@ export default function LoginScreen() {
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.logo}>NGX</Text>
-              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.title}>Bienvenido de nuevo</Text>
               <Text style={styles.subtitle}>
-                Sign in to continue your training
+                Inicia sesión para continuar tu entrenamiento
               </Text>
             </View>
 
             {/* Form */}
             <GlassCard style={styles.form} padding="lg">
               <Input
-                label="Email"
-                placeholder="Enter your email"
+                label="Correo"
+                placeholder="Ingresa tu correo"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
@@ -101,8 +92,8 @@ export default function LoginScreen() {
               />
 
               <Input
-                label="Password"
-                placeholder="Enter your password"
+                label="Contraseña"
+                placeholder="Ingresa tu contraseña"
                 secureTextEntry
                 autoComplete="password"
                 value={password}
@@ -118,31 +109,27 @@ export default function LoginScreen() {
                 fullWidth
                 testID="login-submit-button"
               >
-                Sign In
+                Iniciar sesión
               </Button>
             </GlassCard>
 
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                Don't have an account?{' '}
+                ¿No tienes cuenta?{' '}
                 <Link href="/(auth)/register" style={styles.link}>
-                  Sign up
+                  Regístrate
                 </Link>
               </Text>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.void,
-  },
   safeArea: {
     flex: 1,
   },

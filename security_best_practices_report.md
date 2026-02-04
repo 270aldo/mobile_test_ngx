@@ -1,6 +1,6 @@
 # Security Best Practices Report — NGX GENESIS
 
-Fecha: 2026-02-03
+Fecha: 2026-02-04
 
 ## Alcance
 
@@ -50,9 +50,8 @@ Los riesgos más relevantes hoy son:
 
 **S-004 — Navegación controlada por datos (CTA de coach note) sin validación**
 
-- **Impacto:** un valor inesperado en `cta_action` puede navegar a rutas no deseadas/romper flujo (y abre la puerta a “server-driven navigation” sin allowlist).
-- **Evidencia:** `app/(tabs)/index.tsx:130` (`router.push(note.cta_action as any)`).
-- **Recomendación:** validar `cta_action` contra una allowlist de rutas internas permitidas (o mapear acciones a enums/keys, no rutas libres).
+- **Estado:** **Resuelto** (allowlist de rutas internas).
+- **Evidencia:** `constants/routes.ts:1`, `app/(tabs)/index.tsx:65`.
 
 **S-005 — Logging de texto del usuario (riesgo de fuga por logs)**
 

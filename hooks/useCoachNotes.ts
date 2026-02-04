@@ -34,7 +34,7 @@ export function useCoachNotes() {
 /**
  * Get notes filtered by location
  */
-export function useCoachNotesByLocation(location: 'home' | 'workout' | 'progress') {
+export function useCoachNotesByLocation(location: 'home' | 'workout' | 'progress' | 'chat') {
   const notes = useCoachNotesStore();
 
   return useMemo(

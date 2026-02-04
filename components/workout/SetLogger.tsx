@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal, Linking } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +24,11 @@ interface SetLoggerProps {
   lastWeight?: number;
   targetReps?: string;
   recommendedRpe?: number;
+  coachingCues?: string[];
+  tempo?: string | null;
+  restSeconds?: number | null;
+  weightPrescription?: string | null;
+  videoUrl?: string | null;
 }
 
 /**
@@ -46,6 +51,11 @@ export function SetLogger({
   lastWeight = 0,
   targetReps = '8-12',
   recommendedRpe = 8,
+  coachingCues = [],
+  tempo,
+  restSeconds,
+  weightPrescription,
+  videoUrl,
 }: SetLoggerProps) {
   const [weight, setWeight] = useState(lastWeight || 20);
   const [reps, setReps] = useState(10);
@@ -83,6 +93,15 @@ export function SetLogger({
     onClose();
   }, [weight, reps, rpe, onSave, onClose]);
 
+  const handleOpenVideo = useCallback(async () => {
+    if (!videoUrl) return;
+    try {
+      await Linking.openURL(videoUrl);
+    } catch (error) {
+      console.error('Failed to open video url', error);
+    }
+  }, [videoUrl]);
+
   const handleIncrement = (
     setter: React.Dispatch<React.SetStateAction<number>>,
     step: number
@@ -117,6 +136,36 @@ export function SetLogger({
               <Text style={styles.setLabel}>SET {setNumber} DE {totalSets}</Text>
               <Text style={styles.exerciseName}>{exerciseName}</Text>
             </View>
+
+            {/* Targets */}
+            <View style={styles.targetsRow}>
+              <View style={styles.targetChip}>
+                <Text style={styles.targetLabel}>Reps</Text>
+                <Text style={styles.targetValue}>{targetReps}</Text>
+              </View>
+              <View style={styles.targetChip}>
+                <Text style={styles.targetLabel}>Rest</Text>
+                <Text style={styles.targetValue}>{restSeconds ?? 90}s</Text>
+              </View>
+              {tempo && (
+                <View style={styles.targetChip}>
+                  <Text style={styles.targetLabel}>Tempo</Text>
+                  <Text style={styles.targetValue}>{tempo}</Text>
+                </View>
+              )}
+              {weightPrescription && (
+                <View style={styles.targetChip}>
+                  <Text style={styles.targetLabel}>Load</Text>
+                  <Text style={styles.targetValue}>{weightPrescription}</Text>
+                </View>
+              )}
+            </View>
+
+            {videoUrl && (
+              <Pressable style={styles.videoButton} onPress={handleOpenVideo} testID="set-logger-demo">
+                <Text style={styles.videoButtonText}>▶ Ver demo</Text>
+              </Pressable>
+            )}
 
             {/* Weight Input */}
             <View style={styles.inputGroup}>
@@ -199,6 +248,16 @@ export function SetLogger({
               </Text>
             </View>
 
+            {/* Cues */}
+            {coachingCues.length > 0 && (
+              <View style={styles.cues}>
+                <Text style={styles.cuesLabel}>CUES</Text>
+                {coachingCues.slice(0, 3).map((cue, index) => (
+                  <Text key={`${cue}-${index}`} style={styles.cueText}>• {cue}</Text>
+                ))}
+              </View>
+            )}
+
             {/* Actions */}
             <View style={styles.actions}>
               <Button variant="primary" onPress={handleSave} fullWidth>
@@ -272,6 +331,47 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginTop: spacing.xs,
     textTransform: 'uppercase',
+  },
+  targetsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    justifyContent: 'center',
+  },
+  targetChip: {
+    paddingVertical: 6,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  targetLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  targetValue: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+  },
+  videoButton: {
+    alignSelf: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(109, 0, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(109, 0, 255, 0.4)',
+    marginBottom: spacing.md,
+  },
+  videoButtonText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.ngx,
+    fontWeight: typography.fontWeight.semibold,
   },
   inputGroup: {
     marginBottom: spacing.lg,
@@ -355,6 +455,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.sm,
     minHeight: 18,
+  },
+  cues: {
+    marginBottom: spacing.lg,
+    backgroundColor: 'rgba(0, 245, 170, 0.08)',
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 245, 170, 0.2)',
+  },
+  cuesLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.mint,
+    fontWeight: typography.fontWeight.bold,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+  },
+  cueText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   actions: {
     marginTop: spacing.lg,

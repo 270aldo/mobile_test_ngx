@@ -1,6 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   Crown,
   Settings,
@@ -14,7 +13,7 @@ import {
   Zap,
   Edit3,
 } from 'lucide-react-native';
-import { GlassCard, StatusPill } from '@/components/ui';
+import { GlassCard, StatusPill, ScreenBackground } from '@/components/ui';
 import { useAuthStore, useUser } from '@/stores/auth';
 import { useProfile, useSubscription } from '@/stores/profile';
 import { useBadges } from '@/stores/progress';
@@ -65,14 +64,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Premium gradient background */}
-      <LinearGradient
-        colors={['#0A0A0F', '#0D0B14', '#050505']}
-        locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-
+    <ScreenBackground>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
@@ -194,15 +186,11 @@ export default function ProfileScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.void,
-  },
   safeArea: {
     flex: 1,
   },
