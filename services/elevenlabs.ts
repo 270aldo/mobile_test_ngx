@@ -90,7 +90,7 @@ export async function streamSpeech(
 /**
  * Get available voices
  */
-export async function getVoices(): Promise<Array<{ id: string; name: string }>> {
+export async function getVoices(): Promise<{ id: string; name: string }[]> {
   // TODO: Implement API call to get voices
   return [
     { id: 'genesis_default', name: 'GENESIS' },
@@ -106,8 +106,8 @@ export async function getVoices(): Promise<Array<{ id: string; name: string }>> 
 export async function generateVisualizationAudio(sessionData: {
   userName: string;
   workoutName: string;
-  phases: Array<{ text: string }>;
-}): Promise<Array<VoiceSynthesisResult>> {
+  phases: { text: string }[];
+}): Promise<VoiceSynthesisResult[]> {
   // TODO: Pre-generate all audio segments for offline playback
   console.log('[ElevenLabs] Generating visualization audio for:', sessionData.workoutName);
 

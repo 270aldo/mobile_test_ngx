@@ -12,7 +12,7 @@ import {
   Plus,
   Apple,
 } from 'lucide-react-native';
-import { GlassCard, Button, Label, ScreenBackground } from '@/components/ui';
+import { GlassCard, Button, ScreenBackground } from '@/components/ui';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
 import { useNutritionStore, type MealType } from '@/stores/nutrition';
 import { useUser } from '@/stores';

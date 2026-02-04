@@ -56,9 +56,25 @@ function RootLayoutContent() {
     if (hasHydrated.current) return;
     hasHydrated.current = true;
 
+    let settled = false;
+    const fallbackTimer = setTimeout(() => {
+      if (settled) return;
+      console.warn('Auth hydration timeout. Continuing with fallback.');
+      if (!useAuthStore.getState().isHydrated) {
+        useAuthStore.setState({ isHydrated: true });
+      }
+      SplashScreen.hideAsync();
+    }, 5000);
+
     useAuthStore.getState().hydrate().finally(() => {
+      settled = true;
+      clearTimeout(fallbackTimer);
       SplashScreen.hideAsync();
     });
+
+    return () => {
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   // DEV BYPASS: Skip hydration check to test UI (only in dev + explicit flag)
@@ -84,9 +100,10 @@ function RootLayoutContent() {
 function RootNavigator() {
   // DEV BYPASS: Force show tabs for testing (only in dev + explicit flag)
   const devBypass = __DEV__ && process.env.EXPO_PUBLIC_DEV_BYPASS === 'true';
+  const isAuthenticated = useIsAuthenticated();
 
   // Real authentication flow
-  const isLoggedIn = devBypass || useIsAuthenticated();
+  const isLoggedIn = devBypass || isAuthenticated;
   const user = useAuthStore((s) => s.user);
 
   // Check if user needs onboarding (profile not completed)

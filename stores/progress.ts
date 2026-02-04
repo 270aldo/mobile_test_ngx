@@ -18,7 +18,7 @@ interface ProgressState {
   streaks: Streak[];
   badges: Badge[];
   coachNotes: CoachNote[];
-  weightHistory: Array<{ date: string; weight_kg: number }>;
+  weightHistory: { date: string; weight_kg: number }[];
   isLoading: boolean;
   error: string | null;
 }

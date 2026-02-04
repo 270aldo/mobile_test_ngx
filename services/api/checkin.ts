@@ -6,7 +6,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { handleQueryResult, handleQueryResultOrNull, getTodayDate, getWeekStartDate } from './base';
-import type { Checkin, TablesInsert, TablesUpdate } from '@/types';
+import type { Checkin, TablesInsert } from '@/types';
 
 export const checkinApi = {
   /**
@@ -139,7 +139,7 @@ export const checkinApi = {
   getWeightHistory: async (
     userId: string,
     limit: number = 12
-  ): Promise<Array<{ date: string; weight_kg: number }>> => {
+  ): Promise<{ date: string; weight_kg: number }[]> => {
     const { data, error } = await supabase
       .from('checkins')
       .select('date, weight_kg')

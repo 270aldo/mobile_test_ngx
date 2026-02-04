@@ -13,7 +13,6 @@ import type {
   SetLog,
   WorkoutWithLogs,
   TablesInsert,
-  TablesUpdate,
 } from '@/types';
 
 export const workoutApi = {

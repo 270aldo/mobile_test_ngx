@@ -2,7 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Flame, Dumbbell, Utensils, Brain, TrendingUp } from 'lucide-react-native';
 import { GlassCard, ProgressRing } from '@/components/ui';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { colors, spacing, typography } from '@/constants/theme';
 
 // Days of week mapping (Spanish)
 const DAYS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];

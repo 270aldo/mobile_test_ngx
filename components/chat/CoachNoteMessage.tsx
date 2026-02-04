@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
-import { MessageSquare, User, ChevronRight, ExternalLink } from 'lucide-react-native';
+import { MessageSquare, User, ExternalLink } from 'lucide-react-native';
 import { GlassCard } from '@/components/ui';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
 

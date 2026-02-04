@@ -11,7 +11,7 @@ import {
   AlertCircle,
   Info,
 } from 'lucide-react-native';
-import { GlassCard, Button, Label, PulseDot, ScreenBackground } from '@/components/ui';
+import { GlassCard, Button, ScreenBackground } from '@/components/ui';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
 
 type SupplementStatus = 'verified' | 'pending' | 'suggested';

@@ -26,7 +26,7 @@ import { colors, spacing, typography, layout, borderRadius, touchTarget } from '
 import { useUser } from '@/stores/auth';
 import { useChatStore, useMessages, useChatLoading } from '@/stores/chat';
 import { useProfile } from '@/stores/profile';
-import { useCoachNotes, useCoachNotesByLocation } from '@/hooks/useCoachNotes';
+import { useCoachNotesByLocation } from '@/hooks/useCoachNotes';
 
 const quickActions = [
   { id: 'workout', icon: Dumbbell, label: 'Mi workout', prompt: 'Cuéntame sobre mi workout de hoy' },
@@ -57,7 +57,6 @@ export default function ChatScreen() {
 
   // Coach notes for chat location
   const chatNotes = useCoachNotesByLocation('chat');
-  const { dismiss: dismissNote } = useCoachNotes();
 
   const [inputText, setInputText] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
@@ -104,11 +103,11 @@ export default function ChatScreen() {
 
   // Combine messages with coach notes for unified timeline
   const combinedMessages = useMemo(() => {
-    const items: Array<{
+    const items: {
       type: 'message' | 'coach_note' | 'genesis_context';
       data: any;
       timestamp: number;
-    }> = [];
+    }[] = [];
 
     // Add regular messages
     messages.forEach((msg) => {

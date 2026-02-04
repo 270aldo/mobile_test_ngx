@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Scale, Activity, Trophy, TrendingUp, ChevronRight } from 'lucide-react-native';
 import { GlassCard, StatCard } from '@/components/ui';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { colors, spacing, typography } from '@/constants/theme';
 
 interface PRRecord {
   id: string;

@@ -7,7 +7,6 @@ import {
   ViewStyle,
   TextStyle,
   StyleProp,
-  AccessibilityRole,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, borderRadius, spacing, typography, shadows, touchTarget } from '@/constants/theme';

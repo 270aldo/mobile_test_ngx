@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
-import { Play, Clock, BookOpen, ChevronRight } from 'lucide-react-native';
+import { Play, BookOpen, ChevronRight } from 'lucide-react-native';
 import { GlassCard, Label } from '@/components/ui';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
 

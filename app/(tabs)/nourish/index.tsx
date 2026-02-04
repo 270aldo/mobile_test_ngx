@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Plus, ScanLine } from 'lucide-react-native';
-import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
+import { colors, spacing, typography, layout } from '@/constants/theme';
 import { GlassCard, Button, ScreenBackground } from '@/components/ui';
 import { MacroRing, MacroBar, MealCard } from '@/components/nutrition';
 import { useNutritionMeals, useNutritionTargets, useNutritionTotals } from '@/stores/nutrition';

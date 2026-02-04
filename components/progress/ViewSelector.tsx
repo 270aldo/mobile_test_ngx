@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Image } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
 
 type ProgressView = 'season' | 'week' | 'metrics' | 'photos';

@@ -7,7 +7,6 @@ import Animated, {
   withRepeat,
   withSequence,
   Easing,
-  interpolate,
 } from 'react-native-reanimated';
 import { Play, Pause, SkipForward, Volume2, VolumeX } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
@@ -141,7 +140,7 @@ export function VisualizationPlayer({
         false
       );
     }
-  }, [isPlaying, currentPhaseIndex]);
+  }, [isPlaying, currentPhaseIndex, breathScale, breathOpacity]);
 
   // Timer effect
   useEffect(() => {

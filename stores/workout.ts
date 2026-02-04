@@ -8,7 +8,7 @@
 
 import { create } from 'zustand';
 import { workoutApi } from '@/services/api';
-import type { Workout, ExerciseBlock, WorkoutLog, SetLog, WorkoutWithLogs } from '@/types';
+import type { ExerciseBlock, WorkoutLog, SetLog, WorkoutWithLogs } from '@/types';
 
 interface WorkoutState {
   currentWorkout: WorkoutWithLogs | null;

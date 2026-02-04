@@ -14,12 +14,12 @@ import {
 import { CoachNoteCard, ScreenBackground } from '@/components/ui';
 import { useUser } from '@/stores/auth';
 import { useProfile } from '@/stores/profile';
-import { useActiveSeason, useTodayWorkout, useWeekWorkouts } from '@/stores/season';
+import { useActiveSeason, useTodayWorkout } from '@/stores/season';
 import { useNutritionTotals, useNutritionTargets } from '@/stores/nutrition';
 import { useHasCompletedMindfulnessToday } from '@/stores/mindfulness';
 import { useAppData } from '@/hooks';
 import { useCoachNotesByLocation, useCoachNotes } from '@/hooks/useCoachNotes';
-import { colors, spacing, layout } from '@/constants/theme';
+import { spacing, layout } from '@/constants/theme';
 import { getTodayDate } from '@/services/api/base';
 import { isCoachCtaRoute } from '@/constants/routes';
 
@@ -55,7 +55,6 @@ export default function HomeScreen() {
   const profile = useProfile();
   const activeSeason = useActiveSeason();
   const todayWorkout = useTodayWorkout();
-  const weekWorkouts = useWeekWorkouts();
   const nutritionTotals = useNutritionTotals();
   const nutritionTargets = useNutritionTargets();
   const homeNotes = useCoachNotesByLocation('home');

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Inbox, Dumbbell, TrendingUp, MessageSquare } from 'lucide-react-native';
 import { Button } from './Button';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { colors, spacing, typography } from '@/constants/theme';
 
 type EmptyStateType = 'default' | 'workouts' | 'progress' | 'messages';
 

@@ -6,7 +6,7 @@ import {
   ImagePlus,
   Settings2,
 } from 'lucide-react-native';
-import { colors, spacing, borderRadius } from '@/constants/theme';
+import { colors, spacing } from '@/constants/theme';
 
 interface CameraControlsProps {
   /** Flash enabled */

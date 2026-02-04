@@ -9,7 +9,6 @@ import {
   Play,
   Pause,
   CheckCircle2,
-  Circle,
   ChevronRight,
   Zap,
 } from 'lucide-react-native';
@@ -18,7 +17,7 @@ import { SetLogger, RestTimer, WorkoutSummary } from '@/components/workout';
 import type { SetLogData, WorkoutSummaryData } from '@/components/workout';
 import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
 import { useTodayWorkout, useSeasonLoading } from '@/stores/season';
-import { useWorkoutStore, useCurrentWorkout, useExerciseBlocks, useWorkoutInProgress, useSetLogs } from '@/stores/workout';
+import { useWorkoutStore, useExerciseBlocks, useWorkoutInProgress, useSetLogs } from '@/stores/workout';
 import { useUser } from '@/stores/auth';
 import type { ExerciseBlock } from '@/types';
 
@@ -27,7 +26,6 @@ export default function TrainScreen() {
   const user = useUser();
   const todayWorkout = useTodayWorkout();
   const isLoading = useSeasonLoading();
-  const currentWorkout = useCurrentWorkout();
   const exerciseBlocks = useExerciseBlocks();
   const isWorkoutInProgress = useWorkoutInProgress();
   const setLogs = useSetLogs();
@@ -90,17 +88,6 @@ export default function TrainScreen() {
 
   // Track whether we're transitioning between exercises (last set completed)
   const pendingExerciseTransition = useRef(false);
-
-  // Start workout handler
-  const handleStartWorkout = useCallback(async () => {
-    if (!user?.id || !todayWorkout?.id) return;
-    try {
-      await useWorkoutStore.getState().startWorkout(todayWorkout.id, user.id);
-    } catch (error) {
-      console.error('Failed to start workout:', error);
-      Alert.alert('Error', 'No se pudo iniciar el workout.');
-    }
-  }, [user?.id, todayWorkout?.id]);
 
   // Complete exercise handler
   const handleCompleteExercise = useCallback((exerciseId: string) => {

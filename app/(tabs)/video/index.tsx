@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Video, Dumbbell, MessageCircle, Play } from 'lucide-react-native';
 import { GlassCard, Button, Label, ScreenBackground } from '@/components/ui';
 import { CoachVideo, ExerciseDemo } from '@/components/video';
-import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
+import { colors, spacing, typography, layout } from '@/constants/theme';
 
 const COACH_VIDEO = {
   coachName: 'Diego',

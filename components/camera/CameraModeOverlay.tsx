@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import {
   ScanBarcode,
-  Video,
   Image as ImageIcon,
   Info,
   Timer,
