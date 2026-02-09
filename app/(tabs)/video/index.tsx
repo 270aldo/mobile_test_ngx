@@ -1,8 +1,9 @@
+import { useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Video, Dumbbell, MessageCircle, Play } from 'lucide-react-native';
-import { GlassCard, Button, Label, ScreenBackground } from '@/components/ui';
+import { GlassCard, Button, Label, ScreenBackground, BackButton, ScrollControls } from '@/components/ui';
 import { CoachVideo, ExerciseDemo } from '@/components/video';
 import { colors, spacing, typography, layout } from '@/constants/theme';
 
@@ -21,18 +22,24 @@ const DEMOS = [
 
 export default function VideoHubScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
 
   return (
     <ScreenBackground glowColors={['rgba(109, 0, 255, 0.1)', 'transparent']} glowHeight={300}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
+          ref={scrollRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
         >
-          <View style={styles.header}>
-            <Text style={styles.title}>VIDEO</Text>
-            <Text style={styles.subtitle}>Aprende, analiza, mejora</Text>
+          <View style={styles.headerRow}>
+            <BackButton fallbackRoute="/(tabs)" testID="video-back-button" />
+            <View style={styles.header}>
+              <Text style={styles.title}>VIDEO</Text>
+              <Text style={styles.subtitle}>Aprende, analiza, mejora</Text>
+            </View>
+            <View style={styles.headerSpacer} />
           </View>
 
           {/* Coach Video */}
@@ -105,6 +112,12 @@ export default function VideoHubScreen() {
             </Button>
           </View>
         </ScrollView>
+        <ScrollControls
+          onTopPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+          onBottomPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+          bottom={110}
+          testIDPrefix="video-scroll"
+        />
       </SafeAreaView>
     </ScreenBackground>
   );
@@ -124,7 +137,16 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.xs,
+  },
+  headerSpacer: {
+    width: 44,
+    height: 44,
   },
   title: {
     fontSize: typography.fontSize.sm,

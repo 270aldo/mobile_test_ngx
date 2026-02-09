@@ -7,13 +7,18 @@ export default function Index() {
   const isHydrated = useIsHydrated();
   const isAuthenticated = useIsAuthenticated();
   const user = useUser();
+  const devBypass = __DEV__ && process.env.EXPO_PUBLIC_DEV_BYPASS === 'true';
 
-  if (!isHydrated) {
+  if (!isHydrated && !devBypass) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
+  }
+
+  if (devBypass) {
+    return <Redirect href="/(tabs)" />;
   }
 
   if (!isAuthenticated) {

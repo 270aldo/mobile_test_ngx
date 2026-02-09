@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Play, Moon, Wind, Zap } from 'lucide-react-native';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
-import { GlassCard, Button, ScreenBackground } from '@/components/ui';
+import { GlassCard, Button, ScreenBackground, BackButton, ScrollControls } from '@/components/ui';
 import { VisualizationPlayer } from '@/components/mindfulness';
 import { useUser } from '@/stores';
 import { useMindfulnessStore } from '@/stores/mindfulness';
@@ -72,6 +72,7 @@ const SESSIONS = [
 ];
 
 export default function MindScreen() {
+    const scrollRef = useRef<ScrollView>(null);
     const params = useLocalSearchParams<{ session?: string }>();
     const initialSession = typeof params.session === 'string' ? params.session : null;
     const [activeSession, setActiveSession] = useState<string | null>(initialSession);
@@ -135,14 +136,19 @@ export default function MindScreen() {
         >
             <SafeAreaView style={styles.safeArea} edges={['top']}>
                 <ScrollView
+                    ref={scrollRef}
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
+                    showsVerticalScrollIndicator
                 >
                     {/* Header */}
-                    <View style={styles.header}>
-                        <Text style={styles.title}>MENTE</Text>
-                        <Text style={styles.subtitle}>Claridad y Enfoque</Text>
+                    <View style={styles.headerRow}>
+                        <BackButton fallbackRoute="/(tabs)" testID="mind-back-button" />
+                        <View style={styles.header}>
+                            <Text style={styles.title}>MENTE</Text>
+                            <Text style={styles.subtitle}>Claridad y Enfoque</Text>
+                        </View>
+                        <View style={styles.headerSpacer} />
                     </View>
 
                     {/* Featured: Morning Visualization */}
@@ -206,6 +212,12 @@ export default function MindScreen() {
                     ))}
 
                 </ScrollView>
+                <ScrollControls
+                    onTopPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+                    onBottomPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+                    bottom={110}
+                    testIDPrefix="mind-scroll"
+                />
             </SafeAreaView>
         </ScreenBackground>
     );
@@ -229,7 +241,16 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: 'center',
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         marginBottom: spacing.xs,
+    },
+    headerSpacer: {
+        width: 44,
+        height: 44,
     },
     title: {
         fontSize: typography.fontSize.sm,

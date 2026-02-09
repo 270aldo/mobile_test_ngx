@@ -7,6 +7,7 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { seasonApi } from '@/services/api';
 import type { Season, Workout, WorkoutWithExercises } from '@/types';
 
@@ -128,9 +129,12 @@ export const useSeasonError = () => useSeasonStore((s) => s.error);
 export const useCurrentWeek = () => useSeasonStore((s) => s.activeSeason?.current_week ?? 1);
 export const useCurrentPhase = () => useSeasonStore((s) => s.activeSeason?.current_phase ?? 'foundation');
 export const useHasTodayWorkout = () => useSeasonStore((s) => s.todayWorkout !== null);
-export const useSeasonProgress = () => useSeasonStore((s) => ({
-  week: s.activeSeason?.current_week ?? 1,
-  totalWeeks: 12,
-  phase: s.activeSeason?.current_phase ?? 'foundation',
-  goal: s.activeSeason?.goal ?? '',
-}));
+export const useSeasonProgress = () =>
+  useSeasonStore(
+    useShallow((s) => ({
+      week: s.activeSeason?.current_week ?? 1,
+      totalWeeks: 12,
+      phase: s.activeSeason?.current_phase ?? 'foundation',
+      goal: s.activeSeason?.goal ?? '',
+    }))
+  );

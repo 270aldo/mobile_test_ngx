@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import {
-  ChevronLeft,
   Search,
   Camera,
   Barcode,
@@ -12,7 +11,7 @@ import {
   Plus,
   Apple,
 } from 'lucide-react-native';
-import { GlassCard, Button, ScreenBackground } from '@/components/ui';
+import { GlassCard, ScreenBackground, BackButton, ScrollControls } from '@/components/ui';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
 import { useNutritionStore, type MealType } from '@/stores/nutrition';
 import { useUser } from '@/stores';
@@ -52,6 +51,7 @@ const FAVORITES: QuickAddItem[] = [
  */
 export default function NutritionLogScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const addFood = useNutritionStore((s) => s.addFood);
   const user = useUser();
@@ -88,18 +88,17 @@ export default function NutritionLogScreen() {
           headerTitle: 'Añadir Comida',
           headerTitleStyle: { color: colors.text },
           headerLeft: () => (
-            <Button variant="ghost" onPress={() => router.back()}>
-              <ChevronLeft size={24} color={colors.text} />
-            </Button>
+            <BackButton fallbackRoute="/(tabs)/nourish" />
           ),
         }}
       />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
+          ref={scrollRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
           keyboardShouldPersistTaps="handled"
         >
           {/* Search Bar */}
@@ -223,6 +222,12 @@ export default function NutritionLogScreen() {
             </Text>
           </GlassCard>
         </ScrollView>
+        <ScrollControls
+          onTopPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+          onBottomPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+          bottom={32}
+          testIDPrefix="nutrition-log-scroll"
+        />
       </SafeAreaView>
     </ScreenBackground>
   );

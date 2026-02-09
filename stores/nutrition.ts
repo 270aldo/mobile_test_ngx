@@ -8,6 +8,7 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { nutritionApi } from '@/services/api/nutrition';
 import { getTodayDate } from '@/services/api/base';
 
@@ -221,19 +222,22 @@ export const useNutritionStore = create<NutritionStore>((set) => ({
 // Selector hooks
 export const useNutritionMeals = () => useNutritionStore((s) => s.meals);
 export const useNutritionTargets = () => useNutritionStore((s) => s.targets);
-export const useNutritionTotals = () => useNutritionStore((s) => {
-  const items = [
-    ...s.meals.breakfast,
-    ...s.meals.lunch,
-    ...s.meals.dinner,
-    ...s.meals.snacks,
-  ];
-  return {
-    calories: items.reduce((sum, item) => sum + item.calories, 0),
-    protein: items.reduce((sum, item) => sum + item.protein, 0),
-    carbs: items.reduce((sum, item) => sum + item.carbs, 0),
-    fat: items.reduce((sum, item) => sum + item.fat, 0),
-  };
-});
+export const useNutritionTotals = () =>
+  useNutritionStore(
+    useShallow((s) => {
+      const items = [
+        ...s.meals.breakfast,
+        ...s.meals.lunch,
+        ...s.meals.dinner,
+        ...s.meals.snacks,
+      ];
+      return {
+        calories: items.reduce((sum, item) => sum + item.calories, 0),
+        protein: items.reduce((sum, item) => sum + item.protein, 0),
+        carbs: items.reduce((sum, item) => sum + item.carbs, 0),
+        fat: items.reduce((sum, item) => sum + item.fat, 0),
+      };
+    })
+  );
 export const useNutritionLoading = () => useNutritionStore((s) => s.isLoading);
 export const useNutritionError = () => useNutritionStore((s) => s.error);

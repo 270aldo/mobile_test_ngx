@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
-  ChevronLeft,
   Timer,
   Flame,
   Play,
@@ -12,10 +11,10 @@ import {
   ChevronRight,
   Zap,
 } from 'lucide-react-native';
-import { GlassCard, Button, StatusPill, ProgressRing, EmptyState, ScreenBackground } from '@/components/ui';
+import { GlassCard, Button, StatusPill, ProgressRing, EmptyState, ScreenBackground, BackButton, ScrollControls } from '@/components/ui';
 import { SetLogger, RestTimer, WorkoutSummary } from '@/components/workout';
 import type { SetLogData, WorkoutSummaryData } from '@/components/workout';
-import { colors, spacing, typography, layout, borderRadius, touchTarget } from '@/constants/theme';
+import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
 import { useTodayWorkout, useSeasonLoading } from '@/stores/season';
 import { useWorkoutStore, useExerciseBlocks, useWorkoutInProgress, useSetLogs } from '@/stores/workout';
 import { useUser } from '@/stores/auth';
@@ -23,6 +22,7 @@ import type { ExerciseBlock } from '@/types';
 
 export default function TrainScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const user = useUser();
   const todayWorkout = useTodayWorkout();
   const isLoading = useSeasonLoading();
@@ -310,9 +310,7 @@ export default function TrainScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <ChevronLeft size={20} color={colors.text} />
-          </Pressable>
+          <BackButton style={styles.backButton} fallbackRoute="/(tabs)" testID="train-back-button" />
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>SESIÓN ACTIVA</Text>
             <View style={styles.liveBadge}>
@@ -320,13 +318,14 @@ export default function TrainScreen() {
               <Text style={styles.liveText}>EN VIVO</Text>
             </View>
           </View>
-          <View style={{ width: touchTarget.min }} />
+          <View style={styles.backButtonSpacer} />
         </View>
 
         <ScrollView
+          ref={scrollRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
         >
           {/* Hero Timer Card */}
           <GlassCard variant="hero" style={styles.timerCard} backgroundImage={require('@/assets/ngx_pullup.png')}>
@@ -543,6 +542,12 @@ export default function TrainScreen() {
             Finalizar Sesión
           </Button>
         </ScrollView>
+        <ScrollControls
+          onTopPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+          onBottomPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+          bottom={32}
+          testIDPrefix="train-scroll"
+        />
       </SafeAreaView>
 
       {/* Set Logger Modal */}
@@ -615,17 +620,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   backButton: {
-    width: touchTarget.min,
-    height: touchTarget.min,
-    borderRadius: touchTarget.min / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   headerCenter: {
     alignItems: 'center',
+  },
+  backButtonSpacer: {
+    width: 44,
+    height: 44,
   },
   headerTitle: {
     fontSize: typography.fontSize.sm,

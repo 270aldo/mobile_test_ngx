@@ -62,7 +62,7 @@ export default function TabLayout() {
 
       {/* 3. CAMERA (FAB Central) */}
       <Tabs.Screen
-        name="camera"
+        name="camera/index"
         options={{
           title: '',
           tabBarIcon: ({ focused }) => (
@@ -126,7 +126,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="video"
+        name="video/index"
         options={{
           href: null,
         }}

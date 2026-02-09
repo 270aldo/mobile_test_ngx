@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import {
-  ChevronLeft,
   Plus,
   ShieldCheck,
   Clock,
@@ -11,7 +10,7 @@ import {
   AlertCircle,
   Info,
 } from 'lucide-react-native';
-import { GlassCard, Button, ScreenBackground } from '@/components/ui';
+import { GlassCard, ScreenBackground, BackButton, ScrollControls } from '@/components/ui';
 import { colors, spacing, typography, layout, borderRadius } from '@/constants/theme';
 
 type SupplementStatus = 'verified' | 'pending' | 'suggested';
@@ -92,6 +91,7 @@ const STATUS_CONFIG: Record<SupplementStatus, { label: string; color: string; ic
  */
 export default function SupplementsScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const [supplements, setSupplements] = useState<Supplement[]>(MOCK_SUPPLEMENTS);
 
   const toggleTaken = (id: string) => {
@@ -112,9 +112,7 @@ export default function SupplementsScreen() {
           headerTitle: 'Suplementos',
           headerTitleStyle: { color: colors.text },
           headerLeft: () => (
-            <Button variant="ghost" onPress={() => router.back()}>
-              <ChevronLeft size={24} color={colors.text} />
-            </Button>
+            <BackButton fallbackRoute="/(tabs)/nourish" />
           ),
           headerRight: () => (
             <Pressable style={styles.headerButton}>
@@ -126,9 +124,10 @@ export default function SupplementsScreen() {
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
+          ref={scrollRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
         >
           {/* Summary Card */}
           <GlassCard variant="hero" style={styles.summaryCard}>
@@ -259,6 +258,12 @@ export default function SupplementsScreen() {
             verificados. Consulta siempre con un profesional de la salud.
           </Text>
         </ScrollView>
+        <ScrollControls
+          onTopPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+          onBottomPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+          bottom={32}
+          testIDPrefix="supplements-scroll"
+        />
       </SafeAreaView>
     </ScreenBackground>
   );

@@ -1,15 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Plus, ScanLine } from 'lucide-react-native';
 import { colors, spacing, typography, layout } from '@/constants/theme';
-import { GlassCard, Button, ScreenBackground } from '@/components/ui';
+import { GlassCard, Button, ScreenBackground, BackButton, ScrollControls } from '@/components/ui';
 import { MacroRing, MacroBar, MealCard } from '@/components/nutrition';
 import { useNutritionMeals, useNutritionTargets, useNutritionTotals } from '@/stores/nutrition';
 
 export default function NourishScreen() {
     const router = useRouter();
+    const scrollRef = useRef<ScrollView>(null);
     const meals = useNutritionMeals();
     const targets = useNutritionTargets();
     const totals = useNutritionTotals();
@@ -20,14 +21,19 @@ export default function NourishScreen() {
         <ScreenBackground glowColors={['rgba(0, 245, 170, 0.08)', 'transparent']}>
             <SafeAreaView style={styles.safeArea} edges={['top']}>
                 <ScrollView
+                    ref={scrollRef}
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
+                    showsVerticalScrollIndicator
                 >
                     {/* Header */}
-                    <View style={styles.header}>
-                        <Text style={styles.title}>NUTRICIÓN</Text>
-                        <Text style={styles.subtitle}>Alimenta tu potencial</Text>
+                    <View style={styles.headerRow}>
+                        <BackButton fallbackRoute="/(tabs)" testID="nourish-back-button" />
+                        <View style={styles.header}>
+                            <Text style={styles.title}>NUTRICIÓN</Text>
+                            <Text style={styles.subtitle}>Alimenta tu potencial</Text>
+                        </View>
+                        <View style={styles.headerSpacer} />
                     </View>
 
                     {/* Main Stats Card */}
@@ -116,6 +122,12 @@ export default function NourishScreen() {
                         onAddPress={() => router.push('/nutrition/log')}
                     />
                 </ScrollView>
+                <ScrollControls
+                    onTopPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+                    onBottomPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+                    bottom={110}
+                    testIDPrefix="nourish-scroll"
+                />
             </SafeAreaView>
         </ScreenBackground>
     );
@@ -135,7 +147,16 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: 'center',
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         marginBottom: spacing.xs,
+    },
+    headerSpacer: {
+        width: 44,
+        height: 44,
     },
     title: {
         fontSize: typography.fontSize.sm,

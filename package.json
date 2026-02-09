@@ -7,6 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "start:mcp": "EXPO_UNSTABLE_MCP_SERVER=1 expo start",
+    "seed:test-user": "node scripts/seed-test-user.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },
@@ -58,6 +59,9 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "expo-mcp": "~0.2.1",
     "typescript": "~5.9.2"
+  },
+  "engines": {
+    "node": ">=20 <21"
   },
   "private": true
 }

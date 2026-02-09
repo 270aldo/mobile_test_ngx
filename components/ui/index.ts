@@ -16,6 +16,8 @@ export { ProgressRing } from './ProgressRing';
 export { StatCard } from './StatCard';
 export { CoachNoteCard } from './CoachNoteCard';
 export { ScreenBackground } from './ScreenBackground';
+export { BackButton } from './BackButton';
+export { ScrollControls } from './ScrollControls';
 
 // Media Components
 export { OptimizedImage, blurhashes } from './OptimizedImage';
